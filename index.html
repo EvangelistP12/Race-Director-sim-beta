@@ -60,7 +60,6 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
       </div>
       <div class="row">
         <button id="btnTutorial" class="pill">📘 Tutorial</button>
-        <!-- Fallback inline: parte comunque -->
         <button id="btnPlayNow" class="btnPrimary" onclick="window.__safeStart && window.__safeStart()">Gioca ora</button>
       </div>
     </div>
@@ -95,7 +94,6 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
         </div>
       </div>
       <div class="row" style="margin-top:10px">
-        <!-- Fallback inline: parte comunque -->
         <button id="btnStart" class="btnPrimary" onclick="window.__safeStart && window.__safeStart()">🎮 Gioca</button>
         <span class="mini">UI mobile: circuito più grande, pannelli in alto.</span>
       </div>
@@ -121,7 +119,6 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   </div>
 
   <div id="ui">
-    <!-- CLASSIFICA -->
     <div class="title">Classifica in tempo reale</div>
     <div class="card" style="max-height:300px;overflow:auto;margin-bottom:8px">
       <table style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums">
@@ -173,14 +170,12 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
 
 <script>
 (function(){
-  // ---------- Utils base ----------
   const $=id=>document.getElementById(id);
   const canvas=$('track'), ctx=canvas.getContext('2d',{alpha:false});
   const W=canvas.width,H=canvas.height;
   const HUD={lap:$('lap'),max:$('maxLap'),sc:$('scStatus'),score:$('score'),flagTxt:$('flagLabel'),weather:$('weatherTxt'),inc:$('incidentBox'),pit:$('pitInfo')};
   const menu=$('menu'), optLaps=$('optLaps'),optDiff=$('optDiff'),optTrack=$('optTrack'),optWeather=$('optWeather');
 
-  // Pannello debug rapido: Shift+D
   document.addEventListener('keydown',e=>{
     if(e.key.toLowerCase()==='d' && e.shiftKey){
       const d=$('diag'); d.style.display=d.style.display==='block'?'none':'block';
@@ -188,10 +183,9 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   });
   window.onerror=(m,src,ln,col)=>{ const d=$('diag'); if(!d) return; d.style.display='block'; d.textContent+=(d.textContent?'\n':'')+`Errore: ${m} @ ${ln}:${col}`; };
 
-  // ---------- Menu help ----------
-  $('btnTutorial').onclick=()=>alert("Scegli giri/pista/difficoltà, premi Gioca.\nBandiere: Verde/Gialla/SC/Rossa.\nPenalità: +5/+10, DT, SG10, Nera (manuali).\nPit automatici, incidenti 5–20s (> messaggio risoluzione 3–5s).\nUI mobile: pannelli in alto.");
+  $('btnTutorial').onclick=()=>alert("Scegli giri/pista/difficoltà, premi Gioca.\nBandiere: Verde/Gialla/SC/Rossa.\nPenalità: manuali.\nIncidenti 5–20s, messaggio 'incidente risolto' dopo 3–5s.\nUI mobile: pannelli in alto.");
 
-  // ---------- Tracciati ----------
+  // --- Tracciati ---
   const TRACKS={
     imola:[[-0.26,-0.92],[0.38,-0.92],[0.68,-0.80],[0.85,-0.55],[0.76,-0.20],[0.45,-0.02],[0.10,0.05],[-0.12,0.30],[-0.22,0.55],[-0.38,0.82],[-0.68,0.92],[-0.88,0.72],[-0.84,0.38],[-0.64,0.12],[-0.36,-0.04],[-0.10,-0.22],[0.08,-0.48],[0.02,-0.75],[-0.12,-0.90],[-0.26,-0.92]],
     monza:[[0.88,-0.90],[0.20,-0.90],[-0.42,-0.82],[-0.78,-0.56],[-0.86,-0.24],[-0.62,0.02],[-0.20,0.02],[0.40,-0.06],[0.78,0.10],[0.86,0.40],[0.60,0.72],[0.10,0.88],[-0.42,0.86],[-0.86,0.66],[-0.94,0.36],[-0.70,0.06],[-0.24,-0.10],[0.40,-0.18],[0.92,-0.30],[0.96,-0.60],[0.88,-0.90]],
@@ -209,12 +203,12 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   }
   function posOnPath(path,dist){
     const d=((dist%path.total)+path.total)%path.total;let i=1;while(i<path.cum.length&&path.cum[i]<d)i++;
-    const s=path.segs[i-1],t=(d-path.cum[i-1]) / Math.max(1e-6,(path.cum[i]-path.cum[i-1]));
+    const s=path.segs[i-1],t=(d-path.cum[i-1])/Math.max(1e-6,(path.cum[i]-path.cum[i-1]));
     const x=s.a.x+(s.b.x-s.a.x)*t, y=s.a.y+(s.b.y-s.a.y)*t; const ang=Math.atan2(s.b.y-s.a.y,s.b.x-s.a.x);
     return {x,y,ang,nx:-Math.sin(ang),ny:Math.cos(ang)};
   }
 
-  // ---------- Sfondo v4.1.2 + tribune ----------
+  // --- Sfondo v4.1.2 + tribune ---
   let bokeh = Array.from({length:18},()=>({
     x: Math.random()*W, y: Math.random()*H,
     r: 80+Math.random()*140,
@@ -254,7 +248,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     ctx.globalAlpha = 1;
   }
 
-  // ---------- Meteo ----------
+  // --- Meteo ---
   let weather="sunny", rain=[];
   function setWeather(mode){
     if(mode==="auto"){const r=Math.random();weather=r<0.6?"sunny":r<0.8?"cloudy":(Math.random()<0.6?"rainLight":"rainHeavy");}
@@ -275,7 +269,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   }
   const grip=()=>weather==="sunny"?1:weather==="cloudy"?0.96:weather==="rainLight"?0.88:0.78;
 
-  // ---------- Pubblico ----------
+  // --- Pubblico ---
   let fans=[];
   function makeFans(path,gap=36,bands=4){
     const res=[],col=["#ff5252","#ffd600","#00e676","#40c4ff","#e040fb","#ffab40","#f06292"];
@@ -284,11 +278,8 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   }
   function drawFans(t){for(const f of fans){const bob=Math.sin(t*0.003+f.ph)*f.amp;ctx.fillStyle=f.c;ctx.beginPath();ctx.arc(f.x,f.y+bob,2.6,0,Math.PI*2);ctx.fill();if(((f.ph*1000)|0)%19===0){ctx.strokeStyle="#e0e6f5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(f.x,f.y+bob);ctx.lineTo(f.x+6,f.y-10+bob);ctx.stroke();ctx.fillStyle=f.c;ctx.fillRect(f.x+6,f.y-10+bob,7,4)}}}
 
-  // ---------- Pista + pit ----------
+  // --- Pista + pit ---
   let path=null,pit=null,trackKey="imola";
-  function buildPathAndPit(key){
-    trackKey=key; path=buildPath(TRACKS[key]); pit=buildPit(path); fans=makeFans(path);
-  }
   function buildPit(p){
     const st=posOnPath(p,0),off=58,len=300,w=18;
     const px=st.x+st.nx*off,py=st.y+st.ny*off,vx=Math.cos(st.ang),vy=Math.sin(st.ang),nx=-vy,ny=vx;
@@ -301,6 +292,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     if(!pit) return; ctx.fillStyle="#2a3f70";ctx.beginPath();ctx.moveTo(pit.rect[0].x,pit.rect[0].y);for(let i=1;i<pit.rect.length;i++)ctx.lineTo(pit.rect[i].x,pit.rect[i].y);ctx.closePath();ctx.fill();
     ctx.fillStyle="#cfe2ff";ctx.font="14px monospace";ctx.fillText("PIT",pit.rect[0].x,pit.rect[0].y-8);
   }
+  function buildPathAndPit(key){ trackKey=key; path=buildPath(TRACKS[key]); pit=buildPit(path); fans=makeFans(path); }
   function drawTrack(){
     if(trackKey==="monaco"){ctx.fillStyle="#0c2a3e";ctx.fillRect(0,H-120,W,120);for(let i=0;i<6;i++){ctx.fillStyle="#c7e9f7";ctx.fillRect(60+i*200,H-90,120,34)}}
     if(trackKey==="abudhabi"){ctx.fillStyle="#0f2146";ctx.fillRect(0,0,W,80);for(let i=0;i<8;i++){ctx.fillStyle="#1b2f63";ctx.fillRect(i*160,18,90,42)}}
@@ -309,7 +301,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     ctx.strokeStyle="#b8c7e6";ctx.lineWidth=2;ctx.setLineDash([12,12]);ctx.beginPath();ctx.moveTo(path.pts[0].x,path.pts[0].y);for(let i=1;i<path.pts.length;i++)ctx.lineTo(path.pts[i].x,path.pts[i].y);ctx.stroke();ctx.setLineDash([]);
   }
 
-  // ---------- Auto ----------
+  // --- Auto ---
   const TEAMS=["Aquila GP","Vortex","Nebula","Artemis","Orion","Tempest","Falconet","Helios","Quartz","Zenith","Argon","Volta"];
   const COLORS=["#e10600","#00d2be","#0600ef","#ff9800","#2b2d42","#00c853","#8e24aa","#ffd600","#ff1744","#40c4ff","#64ffda","#b388ff"];
   function drawF1(x,y,ang,color,num){
@@ -328,8 +320,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     ctx.fillStyle="#cfd6e6"; ctx.fillRect(-L/2-8,-Wc*0.9,6,Wc*1.8);
     ctx.fillStyle="#e4e8f2"; ctx.fillRect(L/2-6,-Wc*0.9,10,Wc*1.8);
     ctx.fillStyle="#cfd6e6"; ctx.fillRect(L/2-2,-Wc*0.7,6,Wc*1.4);
-    ctx.fillStyle="#0b0b0e";
-    [[-L/4,-Wc/1.1],[-L/4,Wc/1.1],[L/4,-Wc/1.1],[L/4,Wc/1.1]].forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],5.2,0,Math.PI*2);ctx.fill()});
+    ctx.fillStyle="#0b0b0e"; [[-L/4,-Wc/1.1],[-L/4,Wc/1.1],[L/4,-Wc/1.1],[L/4,Wc/1.1]].forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],5.2,0,Math.PI*2);ctx.fill()});
     ctx.fillStyle="#fff"; ctx.fillRect(-L/2+3,-7,16,14); ctx.fillStyle="#111"; ctx.font="10px monospace";
     const s=String(num); ctx.fillText(s,-L/2+(s.length===1?8:5),3); ctx.fillStyle="#fff"; ctx.fillRect(-6,-6,12,12); ctx.fillStyle="#111"; ctx.fillText(s,-4,3);
     ctx.restore();
@@ -343,13 +334,15 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     ctx.restore();
   }
 
-  // ---------- Stato di gara ----------
+  // --- Stato di gara ---
   const N=12;let cars=[];
   let running=false,raceOver=false,flag="GREEN",safetyCar=false,score=0;
   let nextIncident=0,incident=null;
+  let __incId=0; // contatore incidenti per garantire messaggio risoluzione
+
   function scheduleIncident(){ nextIncident = performance.now() + (5000 + Math.random()*15000); } // 5–20s
 
-  // Infrazioni manuali (solo avviso)
+  // Infrazioni (solo avviso)
   let nextInfraction = 0, infraction=null;
 
   function newGrid(){
@@ -382,7 +375,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     </tr>`).join("");
   }
 
-  // ---------- Incidenti (con messaggio risoluzione 3–5s) ----------
+  // --- Incidenti: avviso + messaggio risoluzione 3–5s ALWAYS ---
   function tryIncident(){
     if(incident||performance.now()<nextIncident||flag==="SC"||flag==="RED") return;
     const types=[
@@ -395,17 +388,22 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     const pick=Math.random()<bias?types[Math.floor(Math.random()*3)]:types[Math.floor(Math.random()*types.length)];
     const active=cars.filter(c=>!c.finished&&!c.dsq);
     const victim=active.length? active[Math.floor(Math.random()*active.length)] : null;
-    incident={...pick,carId:victim?victim.id:null};
 
+    incident={...pick,carId:victim?victim.id:null};
     const carTxt=incident.carId!=null?` (#${cars[incident.carId].number} ${cars[incident.carId].team})`:"";
     HUD.inc.innerHTML=`⚠️ <b>INCIDENTE:</b> ${incident.type}${carTxt} — <i>${incident.msg}</i> <span class="mini">(Consiglio: ${incident.rec})</span>`;
     HUD.inc.style.display='block';
 
+    // Avvio timer risoluzione che NON dipende dallo stato 'incident'
+    const myId = ++__incId; // memorizza l'ordine di questo incidente
+    const wasSCRecommended = (incident.rec==="SC"); // ricordo la raccomandazione
     const delay = 3000 + Math.random()*2000; // 3–5s
     setTimeout(()=>{
-      if(!incident) return;
-      const text = safetyCar ? "✅ Safety Car rientra, metti la bandiera verde"
-                             : "✅ Incidente risolto, metti la bandiera verde";
+      // Mostra il messaggio solo se non è iniziato un incidente più recente
+      if(myId !== __incId) return;
+      const text = (safetyCar || wasSCRecommended)
+        ? "✅ Safety Car rientra, metti la bandiera verde"
+        : "✅ Incidente risolto, metti la bandiera verde";
       HUD.inc.innerHTML = `${HUD.inc.innerHTML}<br>${text}`;
     }, delay);
 
@@ -414,15 +412,15 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   function resolveIncident(byAction){
     if(!incident){HUD.inc.style.display='none';return}
     const ok = (flag==="GREEN") || (flag===incident.rec) || (incident.rec==="SC"&&safetyCar);
-    score += byAction?(ok?10:-6):-4; incident=null;
+    score += byAction?(ok?10:-6):-4;
+    incident=null; // il messaggio di risoluzione arriverà comunque se myId è ancora valido
   }
 
-  // ---------- Infrazioni manuali (solo avviso, scadono dopo 10s) ----------
-  function scheduleInfraction(){
-    nextInfraction = performance.now() + (12000 + Math.random()*13000); // ~12–25s
-  }
+  // --- Infrazioni manuali (avviso, 10s per decidere) ---
+  let nextInfractionTimer=0, infraction=null;
+  function scheduleInfraction(){ nextInfractionTimer = performance.now() + (12000 + Math.random()*13000); }
   function maybeInfraction(){
-    if(infraction || performance.now()<nextInfraction) return;
+    if(infraction || performance.now()<nextInfractionTimer) return;
     const kinds=["Sorpasso in bandiera gialla","Taglio di curva","Collisione evitabile","Ostacolo volontario"];
     const active=cars.filter(c=>!c.finished&&!c.dsq); if(!active.length){ scheduleInfraction(); return; }
     const car = active[Math.floor(Math.random()*active.length)];
@@ -434,12 +432,11 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   function updateInfraction(){
     if(infraction && performance.now()>infraction.expires){
       HUD.inc.innerHTML = `ℹ️ <i>Infrazione archiviata senza penalità</i>`;
-      infraction = null;
-      scheduleInfraction();
+      infraction = null; scheduleInfraction();
     }
   }
 
-  // ---------- Update & Draw ----------
+  // --- Update & Draw ---
   function update(dtMs){
     if(!running||raceOver) return;
     const dt=dtMs/1000, m=(flag==="RED"?0:flag==="SC"?0.45:flag==="YELLOW"?0.65:1)*grip();
@@ -468,12 +465,12 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     HUD.sc.textContent=safetyCar?"On":"Off";
     HUD.score.textContent=Math.floor(score);
     HUD.flagTxt.textContent=flag;
-    HUD.flagTxt.previousElementSibling.className="flag "+(flag==="GREEN"?"green":flag==="YELLOW"?"yellow":flag==="RED"?"red":"sc");
+    HUD.flagTxt.previousElementSibling.className="flag "+(flag==="GREEN"?"green":(flag==="YELLOW"?"yellow":(flag==="RED"?"red":"sc")));
   }
   function loop(now){ const dt=now-(window.__lastT||now); window.__lastT=now; if(running) update(dt); draw(); updateLeaderboard(); requestAnimationFrame(loop); }
   requestAnimationFrame(loop);
 
-  // ---------- Controls & penalità ----------
+  // --- Controls & penalità ---
   const setFlag=f=>{ if(raceOver) return; flag=f; safetyCar=(f==="SC"); if(incident) resolveIncident(true); };
   $('btnGreen').onclick=()=>setFlag("GREEN"); $('btnYellow').onclick=()=>setFlag("YELLOW"); $('btnSC').onclick=()=>setFlag("SC"); $('btnRed').onclick=()=>setFlag("RED");
 
@@ -497,7 +494,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
 
   $('btnPause').onclick=()=>{running=false}; $('btnResume').onclick=()=>{running=true}; $('btnRestart').onclick=()=>startRace(true);
 
-  // ---------- Avvio gara ----------
+  // --- Avvio gara ---
   function newRaceSetup(){
     buildPathAndPit(optTrack.value); setWeather(optWeather.value); newGrid(); applyLapOptions();
     HUD.pit.textContent="—"; HUD.inc.style.display='none';
@@ -509,14 +506,12 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     running=true;
   }
 
-  // SafeStart globale: usato anche dagli onclick HTML (fallback)
+  // Avvio sicuro per i bottoni (anche inline)
   window.__safeStart = function(){
     try{ startRace(true); }catch(e){ console.error(e); }
     try{ menu.style.display='none'; }catch(e){}
     try{ document.querySelector('.wrap')?.setAttribute('aria-hidden','false'); }catch(e){}
   };
-
-  // Bind anche via JS per sicurezza
   function bindClicks(){
     const playNow=$('btnPlayNow'), startBtn=$('btnStart');
     if(playNow && !playNow.__bound){ playNow.addEventListener('click', ()=> window.__safeStart()); playNow.__bound=true; }
