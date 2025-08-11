@@ -164,7 +164,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     </div>
 
     <div class="divider"></div>
-    <div class="card mini">Sfondo v4.1.2 + tribune che sfrecciano, classifica live, F1 realistiche, incidenti 5–20s, risoluzione incidente automatica, infrazioni manuali.</div>
+    <div class="card mini">Sfondo v4.1.2 + tribune che sfrecciano, classifica live, F1 realistiche, incidenti 5–20s, risoluzione incidente, infrazioni manuali.</div>
     <div id="diag" class="mini" style="display:none;background:#2a1b1b;border:1px solid #8b3a3a;border-radius:8px;padding:8px;white-space:pre-wrap"></div>
   </div>
 </div>
@@ -179,7 +179,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   $('btnPlayNow').onclick=()=>$('btnStart').click();
   $('btnTutorial').onclick=()=>alert("Scegli giri/pista/difficoltà, premi Gioca.\nBandiere: Verde/Gialla/SC/Rossa.\nPenalità: +5/+10, DT, SG10, Nera (solo manuali).\nPit automatici, incidenti 5–20s (con messaggio di risoluzione).\nUI mobile: pannelli in alto.");
 
-  // ===== TRACKS (polilinee) =====
+  // ===== TRACKS =====
   const TRACKS={
     imola:[[-0.26,-0.92],[0.38,-0.92],[0.68,-0.80],[0.85,-0.55],[0.76,-0.20],[0.45,-0.02],[0.10,0.05],[-0.12,0.30],[-0.22,0.55],[-0.38,0.82],[-0.68,0.92],[-0.88,0.72],[-0.84,0.38],[-0.64,0.12],[-0.36,-0.04],[-0.10,-0.22],[0.08,-0.48],[0.02,-0.75],[-0.12,-0.90],[-0.26,-0.92]],
     monza:[[0.88,-0.90],[0.20,-0.90],[-0.42,-0.82],[-0.78,-0.56],[-0.86,-0.24],[-0.62,0.02],[-0.20,0.02],[0.40,-0.06],[0.78,0.10],[0.86,0.40],[0.60,0.72],[0.10,0.88],[-0.42,0.86],[-0.86,0.66],[-0.94,0.36],[-0.70,0.06],[-0.24,-0.10],[0.40,-0.18],[0.92,-0.30],[0.96,-0.60],[0.88,-0.90]],
@@ -216,12 +216,10 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     v: 2+Math.random()*5, alpha: .12+.08*Math.random()
   }));
   function drawBackground(){
-    // base gradiente
     const g = ctx.createRadialGradient(W*0.5,H*0.45,Math.min(W,H)*0.15,W*0.5,H*0.6,Math.max(W,H)*0.85);
     g.addColorStop(0,"#0e1630"); g.addColorStop(1,"#091224");
     ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
-    // bokeh morbido
     ctx.globalAlpha = 0.18;
     bokeh.forEach(b=>{
       const rad = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r);
@@ -233,7 +231,6 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     });
     ctx.globalAlpha = 1;
 
-    // tribune in movimento (strisce veloci orizzontali, parallax)
     stands.forEach(s=>{
       ctx.globalAlpha = s.alpha;
       ctx.fillStyle = "#9fb3e6";
@@ -306,15 +303,12 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
     const L=48, Wc=16;
 
-    // Ombra
     ctx.globalAlpha=.35; ctx.fillStyle="#000";
     ctx.beginPath(); ctx.ellipse(3,4,L*.62,Wc*1.1,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
 
-    // Fondo vettura (plank)
     ctx.fillStyle="#1a1a22";
     ctx.fillRect(-L/2+6, -Wc*0.55, L-12, Wc*1.1);
 
-    // Sidepods (pance) + body
     ctx.fillStyle=color;
     ctx.beginPath();
     ctx.moveTo(-L/2+10,-Wc*0.9);
@@ -323,13 +317,11 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     ctx.quadraticCurveTo(-2, Wc*1.0, -L/2+10, Wc*0.9);
     ctx.closePath(); ctx.fill();
 
-    // Cockpit + halo
     ctx.fillStyle="#0f141c";
     ctx.fillRect(-4,-Wc*0.55,8,Wc*1.1);
     ctx.fillStyle="#0b0f17";
     ctx.fillRect(-1.2,-Wc*0.75,2.4,Wc*1.5);
 
-    // Muso stretto
     ctx.fillStyle=color;
     ctx.beginPath();
     ctx.moveTo(-L/2+2,0);
@@ -337,24 +329,20 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     ctx.lineTo(-L/2-10, Wc*0.18);
     ctx.closePath(); ctx.fill();
 
-    // Ala anteriore
     ctx.fillStyle="#e4e8f2";
     ctx.fillRect(-L/2-14,-Wc*1.1,12,Wc*2.2);
     ctx.fillStyle="#cfd6e6";
     ctx.fillRect(-L/2-8,-Wc*0.9,6,Wc*1.8);
 
-    // Ala posteriore
     ctx.fillStyle="#e4e8f2";
     ctx.fillRect(L/2-6,-Wc*0.9,10,Wc*1.8);
     ctx.fillStyle="#cfd6e6";
     ctx.fillRect(L/2-2,-Wc*0.7,6,Wc*1.4);
 
-    // Gomme
     ctx.fillStyle="#0b0b0e";
     const tyres=[[-L/4,-Wc/1.1],[-L/4,Wc/1.1],[L/4,-Wc/1.1],[L/4,Wc/1.1]];
     tyres.forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],5.2,0,Math.PI*2);ctx.fill()});
 
-    // Numeri (naso + cofano motore)
     ctx.fillStyle="#fff"; ctx.fillRect(-L/2+3,-7,16,14);
     ctx.fillStyle="#111"; ctx.font="10px monospace"; const s=String(num);
     ctx.fillText(s,-L/2+(s.length===1?8:5),3);
@@ -365,10 +353,10 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
 
   function drawSafetyCar(x,y,ang,t){
     ctx.save();ctx.translate(x,y);ctx.rotate(ang);
-    ctx.fillStyle="#ffd54f";ctx.fillRect(-24,-10,48,20); // carrozzeria
-    ctx.fillStyle="#263238";ctx.fillRect(-14,-8,20,16); // abitacolo
-    ctx.fillStyle="#ffb300";ctx.fillRect(-28,-8,6,16);ctx.fillRect(22,-8,6,16); // paraurti
-    const blink=(Math.floor(t/300)%2)===0; ctx.fillStyle=blink?"#00e5ff":"#ff1744"; ctx.fillRect(-8,-14,16,4); // barra
+    ctx.fillStyle="#ffd54f";ctx.fillRect(-24,-10,48,20);
+    ctx.fillStyle="#263238";ctx.fillRect(-14,-8,20,16);
+    ctx.fillStyle="#ffb300";ctx.fillRect(-28,-8,6,16);ctx.fillRect(22,-8,6,16);
+    const blink=(Math.floor(t/300)%2)===0; ctx.fillStyle=blink?"#00e5ff":"#ff1744"; ctx.fillRect(-8,-14,16,4);
     ctx.restore();
   }
 
@@ -430,10 +418,9 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     HUD.inc.innerHTML=`⚠️ <b>INCIDENTE:</b> ${incident.type}${carTxt} — <i>${incident.msg}</i> <span class="mini">(Consiglio: ${incident.rec})</span>`;
     HUD.inc.style.display='block';
 
-    // Programma messaggio di risoluzione
     const delay = 3000 + Math.random()*2000; // 3–5s
     setTimeout(()=>{
-      if(!incident) return; // già gestito
+      if(!incident) return;
       const text = safetyCar
         ? "✅ Safety Car rientra, metti la bandiera verde"
         : "✅ Incidente risolto, metti la bandiera verde";
@@ -445,12 +432,13 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   function resolveIncident(byAction){
     if(!incident){HUD.inc.style.display='none';return}
     const ok = flag==="GREEN" ? true : (flag===incident?.rec || (incident?.rec==="SC"&&safetyCar));
-    score += byAction?(ok?10:-6):-4; incident=null; // non chiudo il box: resta l'ultimo messaggio
+    score += byAction?(ok?10:-6):-4; incident=null;
   }
 
   // ===== Infrazioni NON autorizzate (solo avviso, manuali) =====
+  let lastPen=[];
   function scheduleInfraction(){
-    nextInfraction = performance.now() + (12000 + Math.random()*13000); // ogni ~12–25s
+    nextInfraction = performance.now() + (12000 + Math.random()*13000); // ~12–25s
   }
   function maybeInfraction(){
     if(infraction || performance.now()<nextInfraction) return;
@@ -521,8 +509,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   const setFlag=f=>{if(raceOver)return;flag=f;safetyCar=(f==="SC");if(incident)resolveIncident(true)};
   $('btnGreen').onclick=()=>setFlag("GREEN"); $('btnYellow').onclick=()=>setFlag("YELLOW"); $('btnSC').onclick=()=>setFlag("SC"); $('btnRed').onclick=()=>setFlag("RED");
 
-  // Penalità manuali (solo push nello storico del pilota)
-  const lastPen=[];
+  // Penalità manuali
   document.querySelectorAll('button[data-pen]').forEach(b=>b.onclick=()=>{
     const id=parseInt($('carSelect').value,10),car=cars.find(c=>c.id===id); if(!car||raceOver)return;
     const t=b.getAttribute('data-pen'); let secs=0;
@@ -531,25 +518,20 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     else if(t==="SG10"){ secs=10; car.penalties.push({type:t,secs}); }
     else if(t==="+5s"){ secs=5; car.penalties.push({type:t,secs}); }
     else if(t==="+10s"){ secs=10; car.penalties.push({type:t,secs}); }
-    lastPen.push({id,type:t,secs});
     HUD.inc.style.display='block';
     HUD.inc.innerHTML = `📝 Penalità assegnata a #${car.number}: <b>${t}${secs?(" ("+secs+"s)"):''}</b>`;
   });
   $('btnClearPen').onclick=()=>{
-    const p=lastPen.pop(); if(!p) return;
-    const car=cars.find(c=>c.id===p.id); if(!car) return;
-    if(p.type==="BLACK") car.dsq=false;
-    else{
-      const i=car.penalties.findIndex(x=>x.type===p.type && x.secs===p.secs);
-      if(i>=0) car.penalties.splice(i,1);
-    }
-    HUD.inc.style.display='block'; HUD.inc.innerHTML='↩️ Ultima penalità annullata';
+    // semplice annulla ultima (soft: rimuove l'ultima compatibile)
+    const id=parseInt($('carSelect').value,10),car=cars.find(c=>c.id===id); if(!car)return;
+    if(car.dsq){ car.dsq=false; HUD.inc.innerHTML='↩️ Bandiera nera annullata'; HUD.inc.style.display='block'; return; }
+    const p=car.penalties.pop();
+    HUD.inc.style.display='block'; HUD.inc.innerHTML= p ? `↩️ Rimossa ${p.type}${p.secs?(" ("+p.secs+"s)"):''}` : '↩️ Nessuna penalità da rimuovere';
   };
 
   $('btnPause').onclick=()=>{running=false}; $('btnResume').onclick=()=>{running=true}; $('btnRestart').onclick=()=>startRace(true);
 
   // Start
-  let fans=[], trackKey="imola";
   function selectTrack(key){trackKey=key; path=buildPath(TRACKS[key]); fans=makeFans(path); pit=buildPit(path)}
   function startRace(reset){
     running=false; raceOver=false; flag="GREEN"; safetyCar=false; score=0; incident=null; scheduleIncident(); scheduleInfraction();
