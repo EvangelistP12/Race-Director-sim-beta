@@ -60,7 +60,8 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
       </div>
       <div class="row">
         <button id="btnTutorial" class="pill">📘 Tutorial</button>
-        <button id="btnPlayNow" class="btnPrimary">Gioca ora</button>
+        <!-- Fallback inline: parte comunque -->
+        <button id="btnPlayNow" class="btnPrimary" onclick="window.__safeStart && window.__safeStart()">Gioca ora</button>
       </div>
     </div>
     <div class="card" style="margin-top:12px">
@@ -94,7 +95,8 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
         </div>
       </div>
       <div class="row" style="margin-top:10px">
-        <button id="btnStart" class="btnPrimary">🎮 Gioca</button>
+        <!-- Fallback inline: parte comunque -->
+        <button id="btnStart" class="btnPrimary" onclick="window.__safeStart && window.__safeStart()">🎮 Gioca</button>
         <span class="mini">UI mobile: circuito più grande, pannelli in alto.</span>
       </div>
     </div>
@@ -164,29 +166,38 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     </div>
 
     <div class="divider"></div>
-    <div class="card mini">Sfondo v4.1.2 + tribune che sfrecciano, classifica live, F1 realistiche, incidenti 5–20s, risoluzione incidente, infrazioni manuali.</div>
+    <div class="card mini">Sfondo v4.1.2 + tribune che sfrecciano, classifica live, F1 realistiche, incidenti 5–20s, messaggio “incidente risolto”, infrazioni manuali.</div>
     <div id="diag" class="mini" style="display:none;background:#2a1b1b;border:1px solid #8b3a3a;border-radius:8px;padding:8px;white-space:pre-wrap"></div>
   </div>
 </div>
 
 <script>
 (function(){
+  // ---------- Utils base ----------
   const $=id=>document.getElementById(id);
   const canvas=$('track'), ctx=canvas.getContext('2d',{alpha:false});
   const W=canvas.width,H=canvas.height;
   const HUD={lap:$('lap'),max:$('maxLap'),sc:$('scStatus'),score:$('score'),flagTxt:$('flagLabel'),weather:$('weatherTxt'),inc:$('incidentBox'),pit:$('pitInfo')};
   const menu=$('menu'), optLaps=$('optLaps'),optDiff=$('optDiff'),optTrack=$('optTrack'),optWeather=$('optWeather');
-  $('btnPlayNow').onclick=()=>$('btnStart').click();
-  $('btnTutorial').onclick=()=>alert("Scegli giri/pista/difficoltà, premi Gioca.\nBandiere: Verde/Gialla/SC/Rossa.\nPenalità: +5/+10, DT, SG10, Nera (solo manuali).\nPit automatici, incidenti 5–20s (con messaggio di risoluzione).\nUI mobile: pannelli in alto.");
 
-  // ===== TRACKS =====
+  // Pannello debug rapido: Shift+D
+  document.addEventListener('keydown',e=>{
+    if(e.key.toLowerCase()==='d' && e.shiftKey){
+      const d=$('diag'); d.style.display=d.style.display==='block'?'none':'block';
+    }
+  });
+  window.onerror=(m,src,ln,col)=>{ const d=$('diag'); if(!d) return; d.style.display='block'; d.textContent+=(d.textContent?'\n':'')+`Errore: ${m} @ ${ln}:${col}`; };
+
+  // ---------- Menu help ----------
+  $('btnTutorial').onclick=()=>alert("Scegli giri/pista/difficoltà, premi Gioca.\nBandiere: Verde/Gialla/SC/Rossa.\nPenalità: +5/+10, DT, SG10, Nera (manuali).\nPit automatici, incidenti 5–20s (> messaggio risoluzione 3–5s).\nUI mobile: pannelli in alto.");
+
+  // ---------- Tracciati ----------
   const TRACKS={
     imola:[[-0.26,-0.92],[0.38,-0.92],[0.68,-0.80],[0.85,-0.55],[0.76,-0.20],[0.45,-0.02],[0.10,0.05],[-0.12,0.30],[-0.22,0.55],[-0.38,0.82],[-0.68,0.92],[-0.88,0.72],[-0.84,0.38],[-0.64,0.12],[-0.36,-0.04],[-0.10,-0.22],[0.08,-0.48],[0.02,-0.75],[-0.12,-0.90],[-0.26,-0.92]],
     monza:[[0.88,-0.90],[0.20,-0.90],[-0.42,-0.82],[-0.78,-0.56],[-0.86,-0.24],[-0.62,0.02],[-0.20,0.02],[0.40,-0.06],[0.78,0.10],[0.86,0.40],[0.60,0.72],[0.10,0.88],[-0.42,0.86],[-0.86,0.66],[-0.94,0.36],[-0.70,0.06],[-0.24,-0.10],[0.40,-0.18],[0.92,-0.30],[0.96,-0.60],[0.88,-0.90]],
     monaco:[[-0.80,-0.35],[-0.60,-0.46],[-0.30,-0.52],[0.00,-0.50],[0.20,-0.40],[0.28,-0.22],[0.18,-0.02],[-0.02,0.10],[-0.22,0.16],[-0.46,0.18],[-0.60,0.30],[-0.58,0.50],[-0.40,0.66],[-0.12,0.72],[0.12,0.64],[0.34,0.46],[0.52,0.24],[0.64,0.02],[0.70,-0.20],[0.62,-0.36],[0.40,-0.44],[0.10,-0.46],[-0.26,-0.40],[-0.56,-0.36],[-0.80,-0.35]],
     abudhabi:[[-0.80,-0.60],[-0.35,-0.70],[0.10,-0.72],[0.48,-0.60],[0.72,-0.34],[0.80,-0.02],[0.70,0.24],[0.46,0.40],[0.10,0.46],[-0.28,0.42],[-0.56,0.28],[-0.74,0.08],[-0.68,-0.10],[-0.52,-0.30],[-0.26,-0.46],[0.08,-0.52],[0.42,-0.42],[0.64,-0.18],[0.60,0.04],[0.44,0.20],[0.18,0.28],[-0.14,0.26],[-0.46,0.16],[-0.66,-0.04],[-0.76,-0.30],[-0.80,-0.60]]
   };
-
   function buildPath(poly,padding=(innerWidth<980?60:80)){
     const xs=poly.map(p=>p[0]), ys=poly.map(p=>p[1]);
     const s=Math.min((W-2*padding)/(Math.max(...xs)-Math.min(...xs)), (H-2*padding)/(Math.max(...ys)-Math.min(...ys)));
@@ -198,12 +209,12 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   }
   function posOnPath(path,dist){
     const d=((dist%path.total)+path.total)%path.total;let i=1;while(i<path.cum.length&&path.cum[i]<d)i++;
-    const s=path.segs[i-1],t=(d-path.cum[i-1])/Math.max(1e-6,(path.cum[i]-path.cum[i-1]));
+    const s=path.segs[i-1],t=(d-path.cum[i-1]) / Math.max(1e-6,(path.cum[i]-path.cum[i-1]));
     const x=s.a.x+(s.b.x-s.a.x)*t, y=s.a.y+(s.b.y-s.a.y)*t; const ang=Math.atan2(s.b.y-s.a.y,s.b.x-s.a.x);
     return {x,y,ang,nx:-Math.sin(ang),ny:Math.cos(ang)};
   }
 
-  // ===== SFONDO v4.1.2 (bokeh) + TRIBUNE CHE SFRECCIANO =====
+  // ---------- Sfondo v4.1.2 + tribune ----------
   let bokeh = Array.from({length:18},()=>({
     x: Math.random()*W, y: Math.random()*H,
     r: 80+Math.random()*140,
@@ -243,7 +254,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     ctx.globalAlpha = 1;
   }
 
-  // ===== Meteo =====
+  // ---------- Meteo ----------
   let weather="sunny", rain=[];
   function setWeather(mode){
     if(mode==="auto"){const r=Math.random();weather=r<0.6?"sunny":r<0.8?"cloudy":(Math.random()<0.6?"rainLight":"rainHeavy");}
@@ -264,7 +275,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   }
   const grip=()=>weather==="sunny"?1:weather==="cloudy"?0.96:weather==="rainLight"?0.88:0.78;
 
-  // ===== Pubblico =====
+  // ---------- Pubblico ----------
   let fans=[];
   function makeFans(path,gap=36,bands=4){
     const res=[],col=["#ff5252","#ffd600","#00e676","#40c4ff","#e040fb","#ffab40","#f06292"];
@@ -273,8 +284,11 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   }
   function drawFans(t){for(const f of fans){const bob=Math.sin(t*0.003+f.ph)*f.amp;ctx.fillStyle=f.c;ctx.beginPath();ctx.arc(f.x,f.y+bob,2.6,0,Math.PI*2);ctx.fill();if(((f.ph*1000)|0)%19===0){ctx.strokeStyle="#e0e6f5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(f.x,f.y+bob);ctx.lineTo(f.x+6,f.y-10+bob);ctx.stroke();ctx.fillStyle=f.c;ctx.fillRect(f.x+6,f.y-10+bob,7,4)}}}
 
-  // ===== Pista + PIT =====
+  // ---------- Pista + pit ----------
   let path=null,pit=null,trackKey="imola";
+  function buildPathAndPit(key){
+    trackKey=key; path=buildPath(TRACKS[key]); pit=buildPit(path); fans=makeFans(path);
+  }
   function buildPit(p){
     const st=posOnPath(p,0),off=58,len=300,w=18;
     const px=st.x+st.nx*off,py=st.y+st.ny*off,vx=Math.cos(st.ang),vy=Math.sin(st.ang),nx=-vy,ny=vx;
@@ -295,62 +309,31 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     ctx.strokeStyle="#b8c7e6";ctx.lineWidth=2;ctx.setLineDash([12,12]);ctx.beginPath();ctx.moveTo(path.pts[0].x,path.pts[0].y);for(let i=1;i<path.pts.length;i++)ctx.lineTo(path.pts[i].x,path.pts[i].y);ctx.stroke();ctx.setLineDash([]);
   }
 
-  // ===== Auto F1 realistiche =====
+  // ---------- Auto ----------
   const TEAMS=["Aquila GP","Vortex","Nebula","Artemis","Orion","Tempest","Falconet","Helios","Quartz","Zenith","Argon","Volta"];
   const COLORS=["#e10600","#00d2be","#0600ef","#ff9800","#2b2d42","#00c853","#8e24aa","#ffd600","#ff1744","#40c4ff","#64ffda","#b388ff"];
-
   function drawF1(x,y,ang,color,num){
     ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
     const L=48, Wc=16;
-
-    ctx.globalAlpha=.35; ctx.fillStyle="#000";
-    ctx.beginPath(); ctx.ellipse(3,4,L*.62,Wc*1.1,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
-
-    ctx.fillStyle="#1a1a22";
-    ctx.fillRect(-L/2+6, -Wc*0.55, L-12, Wc*1.1);
-
-    ctx.fillStyle=color;
-    ctx.beginPath();
-    ctx.moveTo(-L/2+10,-Wc*0.9);
-    ctx.quadraticCurveTo(-2,-Wc*1.0, L/2-8,-Wc*0.55);
-    ctx.lineTo(L/2-8, Wc*0.55);
-    ctx.quadraticCurveTo(-2, Wc*1.0, -L/2+10, Wc*0.9);
+    ctx.globalAlpha=.35; ctx.fillStyle="#000"; ctx.beginPath(); ctx.ellipse(3,4,L*.62,Wc*1.1,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+    ctx.fillStyle="#1a1a22"; ctx.fillRect(-L/2+6, -Wc*0.55, L-12, Wc*1.1);
+    ctx.fillStyle=color; ctx.beginPath();
+    ctx.moveTo(-L/2+10,-Wc*0.9); ctx.quadraticCurveTo(-2,-Wc*1.0, L/2-8,-Wc*0.55);
+    ctx.lineTo(L/2-8, Wc*0.55); ctx.quadraticCurveTo(-2, Wc*1.0, -L/2+10, Wc*0.9);
     ctx.closePath(); ctx.fill();
-
-    ctx.fillStyle="#0f141c";
-    ctx.fillRect(-4,-Wc*0.55,8,Wc*1.1);
-    ctx.fillStyle="#0b0f17";
-    ctx.fillRect(-1.2,-Wc*0.75,2.4,Wc*1.5);
-
-    ctx.fillStyle=color;
-    ctx.beginPath();
-    ctx.moveTo(-L/2+2,0);
-    ctx.lineTo(-L/2-10,-Wc*0.18);
-    ctx.lineTo(-L/2-10, Wc*0.18);
-    ctx.closePath(); ctx.fill();
-
-    ctx.fillStyle="#e4e8f2";
-    ctx.fillRect(-L/2-14,-Wc*1.1,12,Wc*2.2);
-    ctx.fillStyle="#cfd6e6";
-    ctx.fillRect(-L/2-8,-Wc*0.9,6,Wc*1.8);
-
-    ctx.fillStyle="#e4e8f2";
-    ctx.fillRect(L/2-6,-Wc*0.9,10,Wc*1.8);
-    ctx.fillStyle="#cfd6e6";
-    ctx.fillRect(L/2-2,-Wc*0.7,6,Wc*1.4);
-
+    ctx.fillStyle="#0f141c"; ctx.fillRect(-4,-Wc*0.55,8,Wc*1.1);
+    ctx.fillStyle="#0b0f17"; ctx.fillRect(-1.2,-Wc*0.75,2.4,Wc*1.5);
+    ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(-L/2+2,0); ctx.lineTo(-L/2-10,-Wc*0.18); ctx.lineTo(-L/2-10, Wc*0.18); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#e4e8f2"; ctx.fillRect(-L/2-14,-Wc*1.1,12,Wc*2.2);
+    ctx.fillStyle="#cfd6e6"; ctx.fillRect(-L/2-8,-Wc*0.9,6,Wc*1.8);
+    ctx.fillStyle="#e4e8f2"; ctx.fillRect(L/2-6,-Wc*0.9,10,Wc*1.8);
+    ctx.fillStyle="#cfd6e6"; ctx.fillRect(L/2-2,-Wc*0.7,6,Wc*1.4);
     ctx.fillStyle="#0b0b0e";
-    const tyres=[[-L/4,-Wc/1.1],[-L/4,Wc/1.1],[L/4,-Wc/1.1],[L/4,Wc/1.1]];
-    tyres.forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],5.2,0,Math.PI*2);ctx.fill()});
-
-    ctx.fillStyle="#fff"; ctx.fillRect(-L/2+3,-7,16,14);
-    ctx.fillStyle="#111"; ctx.font="10px monospace"; const s=String(num);
-    ctx.fillText(s,-L/2+(s.length===1?8:5),3);
-    ctx.fillStyle="#fff"; ctx.fillRect(-6,-6,12,12); ctx.fillStyle="#111"; ctx.fillText(s,-4,3);
-
+    [[-L/4,-Wc/1.1],[-L/4,Wc/1.1],[L/4,-Wc/1.1],[L/4,Wc/1.1]].forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],5.2,0,Math.PI*2);ctx.fill()});
+    ctx.fillStyle="#fff"; ctx.fillRect(-L/2+3,-7,16,14); ctx.fillStyle="#111"; ctx.font="10px monospace";
+    const s=String(num); ctx.fillText(s,-L/2+(s.length===1?8:5),3); ctx.fillStyle="#fff"; ctx.fillRect(-6,-6,12,12); ctx.fillStyle="#111"; ctx.fillText(s,-4,3);
     ctx.restore();
   }
-
   function drawSafetyCar(x,y,ang,t){
     ctx.save();ctx.translate(x,y);ctx.rotate(ang);
     ctx.fillStyle="#ffd54f";ctx.fillRect(-24,-10,48,20);
@@ -360,13 +343,13 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     ctx.restore();
   }
 
-  // ===== Stato di gara =====
-  const N=12;let cars=[],penHist=[];
+  // ---------- Stato di gara ----------
+  const N=12;let cars=[];
   let running=false,raceOver=false,flag="GREEN",safetyCar=false,score=0;
   let nextIncident=0,incident=null;
   function scheduleIncident(){ nextIncident = performance.now() + (5000 + Math.random()*15000); } // 5–20s
 
-  // Infrazioni (solo avviso)
+  // Infrazioni manuali (solo avviso)
   let nextInfraction = 0, infraction=null;
 
   function newGrid(){
@@ -399,7 +382,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     </tr>`).join("");
   }
 
-  // ===== Incidenti: avviso + risoluzione 3–5s =====
+  // ---------- Incidenti (con messaggio risoluzione 3–5s) ----------
   function tryIncident(){
     if(incident||performance.now()<nextIncident||flag==="SC"||flag==="RED") return;
     const types=[
@@ -421,9 +404,8 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     const delay = 3000 + Math.random()*2000; // 3–5s
     setTimeout(()=>{
       if(!incident) return;
-      const text = safetyCar
-        ? "✅ Safety Car rientra, metti la bandiera verde"
-        : "✅ Incidente risolto, metti la bandiera verde";
+      const text = safetyCar ? "✅ Safety Car rientra, metti la bandiera verde"
+                             : "✅ Incidente risolto, metti la bandiera verde";
       HUD.inc.innerHTML = `${HUD.inc.innerHTML}<br>${text}`;
     }, delay);
 
@@ -431,25 +413,18 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   }
   function resolveIncident(byAction){
     if(!incident){HUD.inc.style.display='none';return}
-    const ok = flag==="GREEN" ? true : (flag===incident?.rec || (incident?.rec==="SC"&&safetyCar));
+    const ok = (flag==="GREEN") || (flag===incident.rec) || (incident.rec==="SC"&&safetyCar);
     score += byAction?(ok?10:-6):-4; incident=null;
   }
 
-  // ===== Infrazioni NON autorizzate (solo avviso, manuali) =====
-  let lastPen=[];
+  // ---------- Infrazioni manuali (solo avviso, scadono dopo 10s) ----------
   function scheduleInfraction(){
     nextInfraction = performance.now() + (12000 + Math.random()*13000); // ~12–25s
   }
   function maybeInfraction(){
     if(infraction || performance.now()<nextInfraction) return;
-    const kinds=[
-      "Sorpasso in bandiera gialla",
-      "Taglio di curva",
-      "Collisione evitabile",
-      "Ostacolo volontario"
-    ];
-    const active=cars.filter(c=>!c.finished&&!c.dsq);
-    if(!active.length){ scheduleInfraction(); return; }
+    const kinds=["Sorpasso in bandiera gialla","Taglio di curva","Collisione evitabile","Ostacolo volontario"];
+    const active=cars.filter(c=>!c.finished&&!c.dsq); if(!active.length){ scheduleInfraction(); return; }
     const car = active[Math.floor(Math.random()*active.length)];
     const what = kinds[Math.floor(Math.random()*kinds.length)];
     infraction = {carId:car.id, what, expires: performance.now()+10000}; // 10s
@@ -464,7 +439,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     }
   }
 
-  // Update & Draw
+  // ---------- Update & Draw ----------
   function update(dtMs){
     if(!running||raceOver) return;
     const dt=dtMs/1000, m=(flag==="RED"?0:flag==="SC"?0.45:flag==="YELLOW"?0.65:1)*grip();
@@ -477,22 +452,16 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
         if(c.lap===c.nextPitLap && pit){ if(c.dist<pit.entry+40){ c.mode="pit_entry"; c.pitTimer=0; pitNow.push("#"+c.number); c.nextPitLap+=cad+(Math.random()<.5?0:1); } }
       }else if(c.mode==="pit_entry"){ c.pitTimer+=dt*.8; if(c.pitTimer>=1){ c.mode="pit_stop"; c.pitTimer=1800+Math.random()*1400; } }
       else if(c.mode==="pit_stop"){ c.pitTimer-=dtMs; if(c.pitTimer<=0){ c.mode="pit_exit"; c.pitTimer=0; } }
-      else if(c.mode==="pit_exit"){ if(c.pitTimer+=dt*.9, c.pitTimer>=1){ c.mode="race"; c.dist=pit.exit+6; } }
+      else if(c.mode==="pit_exit"){ c.pitTimer+=dt*.9; if(c.pitTimer>=1){ c.mode="race"; c.dist=pit.exit+6; } }
       c.totalTime+=dtMs;
     }
     if(pitNow.length) HUD.pit.textContent=pitNow.join(", ");
-    tryIncident();
-    maybeInfraction();
-    updateInfraction();
+    tryIncident(); maybeInfraction(); updateInfraction();
 
     if(cars.every(c=>c.finished||c.dsq)){ raceOver=true; running=false; HUD.inc.style.display='block'; HUD.inc.innerHTML="🏁 <b>FINE GARA</b> — Usa “Nuova Gara” per ricominciare."; }
   }
-
   function draw(){
-    drawBackground();
-    drawWeather();
-    drawTrack();
-    drawPit();
+    drawBackground(); drawWeather(); drawTrack(); drawPit();
     for(const c of cars){ if(c.dsq) continue; const p=posOnPath(path,c.dist); drawF1(p.x,p.y,p.ang,c.color,c.number); }
     if(safetyCar){ const p=posOnPath(path,(performance.now()/8)%path.total); drawSafetyCar(p.x,p.y,p.ang,performance.now()); }
     HUD.lap.textContent=Math.max(...cars.map(c=>c.lap));
@@ -501,15 +470,13 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     HUD.flagTxt.textContent=flag;
     HUD.flagTxt.previousElementSibling.className="flag "+(flag==="GREEN"?"green":flag==="YELLOW"?"yellow":flag==="RED"?"red":"sc");
   }
-
   function loop(now){ const dt=now-(window.__lastT||now); window.__lastT=now; if(running) update(dt); draw(); updateLeaderboard(); requestAnimationFrame(loop); }
   requestAnimationFrame(loop);
 
-  // Controls
-  const setFlag=f=>{if(raceOver)return;flag=f;safetyCar=(f==="SC");if(incident)resolveIncident(true)};
+  // ---------- Controls & penalità ----------
+  const setFlag=f=>{ if(raceOver) return; flag=f; safetyCar=(f==="SC"); if(incident) resolveIncident(true); };
   $('btnGreen').onclick=()=>setFlag("GREEN"); $('btnYellow').onclick=()=>setFlag("YELLOW"); $('btnSC').onclick=()=>setFlag("SC"); $('btnRed').onclick=()=>setFlag("RED");
 
-  // Penalità manuali
   document.querySelectorAll('button[data-pen]').forEach(b=>b.onclick=()=>{
     const id=parseInt($('carSelect').value,10),car=cars.find(c=>c.id===id); if(!car||raceOver)return;
     const t=b.getAttribute('data-pen'); let secs=0;
@@ -522,7 +489,6 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     HUD.inc.innerHTML = `📝 Penalità assegnata a #${car.number}: <b>${t}${secs?(" ("+secs+"s)"):''}</b>`;
   });
   $('btnClearPen').onclick=()=>{
-    // semplice annulla ultima (soft: rimuove l'ultima compatibile)
     const id=parseInt($('carSelect').value,10),car=cars.find(c=>c.id===id); if(!car)return;
     if(car.dsq){ car.dsq=false; HUD.inc.innerHTML='↩️ Bandiera nera annullata'; HUD.inc.style.display='block'; return; }
     const p=car.penalties.pop();
@@ -531,20 +497,35 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
 
   $('btnPause').onclick=()=>{running=false}; $('btnResume').onclick=()=>{running=true}; $('btnRestart').onclick=()=>startRace(true);
 
-  // Start
-  function selectTrack(key){trackKey=key; path=buildPath(TRACKS[key]); fans=makeFans(path); pit=buildPit(path)}
-  function startRace(reset){
-    running=false; raceOver=false; flag="GREEN"; safetyCar=false; score=0; incident=null; scheduleIncident(); scheduleInfraction();
-    selectTrack(optTrack.value); setWeather(optWeather.value); newGrid(); applyLapOptions();
-    HUD.pit.textContent="—"; if(reset) HUD.inc.style.display='none'; running=true;
+  // ---------- Avvio gara ----------
+  function newRaceSetup(){
+    buildPathAndPit(optTrack.value); setWeather(optWeather.value); newGrid(); applyLapOptions();
+    HUD.pit.textContent="—"; HUD.inc.style.display='none';
   }
-  $('btnStart').onclick=()=>{startRace(true);menu.style.display='none';document.querySelector('.wrap').setAttribute('aria-hidden','false')}
+  function startRace(reset){
+    running=false; raceOver=false; flag="GREEN"; safetyCar=false; score=0; incident=null;
+    scheduleIncident(); scheduleInfraction();
+    newRaceSetup();
+    running=true;
+  }
 
-  canvas.addEventListener('pointerdown',()=>running=true);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)running=true});
+  // SafeStart globale: usato anche dagli onclick HTML (fallback)
+  window.__safeStart = function(){
+    try{ startRace(true); }catch(e){ console.error(e); }
+    try{ menu.style.display='none'; }catch(e){}
+    try{ document.querySelector('.wrap')?.setAttribute('aria-hidden','false'); }catch(e){}
+  };
+
+  // Bind anche via JS per sicurezza
+  function bindClicks(){
+    const playNow=$('btnPlayNow'), startBtn=$('btnStart');
+    if(playNow && !playNow.__bound){ playNow.addEventListener('click', ()=> window.__safeStart()); playNow.__bound=true; }
+    if(startBtn && !startBtn.__bound){ startBtn.addEventListener('click', ()=> window.__safeStart()); startBtn.__bound=true; }
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', bindClicks); } else { bindClicks(); }
 
   // Pre-render
-  selectTrack("imola"); setWeather("sunny");
+  buildPathAndPit("imola"); setWeather("sunny");
 })();
 </script>
 </body>
