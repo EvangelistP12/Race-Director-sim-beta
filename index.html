@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Race Director Sim – v4.1.3 Beta</title>
+<style>
+  :root{
+    --bg:#0b0f1a;--panel:#121826;--panel2:#141f33;--stroke:#2d3a54;--text:#eaeaea;
+    --muted:#b7c3d9;--accent:#e10600;--line:#41557d;--line2:#6b8bbd;
+  }
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{display:grid;grid-template-columns:1fr 420px;gap:16px;padding:12px}
+  #game,#ui{background:var(--panel);border:1px solid var(--stroke);border-radius:12px}
+  #game{padding:10px}
+  #ui{padding:12px;display:flex;flex-direction:column;gap:10px;position:sticky;top:8px;height:fit-content}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .title{font-weight:800;letter-spacing:.3px}
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);background:#18243a}
+  .flag{width:16px;height:16px;border-radius:3px;border:1px solid #0008;display:inline-block}
+  .flag.green{background:#00e676}.flag.yellow{background:#ffeb3b}.flag.red{background:#ff1744}
+  .flag.sc{background:linear-gradient(45deg,#ffd600 50%,#000 50%);border:1px solid #000}
+  button,select{background:#18243a;color:var(--text);border:1px solid var(--stroke);border-radius:10px;padding:10px 12px;cursor:pointer}
+  button:hover{filter:brightness(1.12)} button:active{transform:scale(.98)}
+  .divider{height:1px;background:var(--stroke);margin:6px 0}
+  .notice{border:1px dashed #5172b8;border-radius:10px;padding:10px;background:#0f1730;color:#c5d4ff}
+  .mini{font-size:12px;color:var(--muted)}
+  canvas{display:block;border-radius:12px;background:#0f1423;width:100%;height:auto}
+  .hud{display:flex;justify-content:space-between;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .stat{font-variant-numeric:tabular-nums}
+  /* MENU */
+  #menu{
+    position:fixed;inset:0;background:radial-gradient(85% 85% at 50% 40%, #192132 0%, #0b0f1a 70%);
+    display:flex;align-items:center;justify-content:center;z-index:10;padding:20px
+  }
+  .menu-card{width:min(960px,95vw);background:#0f1730;border:1px solid var(--stroke);border-radius:16px;padding:16px;box-shadow:0 10px 40px #0008}
+  .menu-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+  .banner{background:linear-gradient(120deg,#1b2b4d,#0f1b33 55%, #1a2238);border:1px solid #22345a;border-radius:14px;padding:14px;min-height:120px;display:flex;align-items:center;justify-content:space-between}
+  .cta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btnPrimary{background:#e10600;border:0;color:white;border-radius:10px;padding:12px 14px;font-weight:700}
+  .btnPrimary:hover{filter:brightness(1.05)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .card{background:var(--panel2);border:1px solid var(--stroke);border-radius:12px;padding:10px}
+  .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+  /* MOBILE */
+  @media (max-width: 980px){
+    .wrap{grid-template-columns:1fr}
+    #ui{order:-1}
+    canvas{aspect-ratio: 16/10}
+  }
+</style>
+</head>
+<body>
+<!-- MENU DI BENVENUTO -->
+<div id="menu" aria-modal="true">
+  <div class="menu-card">
+    <div class="banner">
+      <div>
+        <div class="title" style="font-size:28px;">Race Director Sim</div>
+        <div class="mini">Tu sei il Direttore di Gara: bandiere, penalità, pit, meteo, pubblico e 4 circuiti sbloccati.</div>
+      </div>
+      <div class="cta">
+        <button id="btnTutorial" class="pill">📘 Tutorial</button>
+        <button id="btnPlayNow" class="btnPrimary">Gioca ora</button>
+      </div>
+    </div>
+    <div class="menu-grid" style="margin-top:12px;">
+      <div class="card">
+        <div class="label">Impostazioni gara</div>
+        <div class="grid2">
+          <div>
+            <div class="mini">Giri</div>
+            <select id="optLaps">
+              <option>5</option><option>7</option><option selected>10</option>
+              <option>15</option><option>20</option><option>25</option>
+            </select>
+          </div>
+          <div>
+            <div class="mini">Difficoltà</div>
+            <select id="optDiff">
+              <option value="easy">Facile</option>
+              <option value="med" selected>Media</option>
+              <option value="hard">Difficile</option>
+            </select>
+          </div>
+          <div>
+            <div class="mini">Pista</div>
+            <select id="optTrack">
+              <option value="imola">Imola</option>
+              <option value="monza">Monza</option>
+              <option value="monaco">Monaco</option>
+              <option value="abudhabi">Abu Dhabi</option>
+            </select>
+          </div>
+          <div>
+            <div class="mini">Meteo</div>
+            <select id="optWeather">
+              <option value="auto" selected>Automatico</option>
+              <option value="sunny">Sole</option>
+              <option value="cloudy">Nuvoloso</option>
+              <option value="rainLight">Pioggia leggera</option>
+              <option value="rainHeavy">Pioggia forte</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="btnStart" class="btnPrimary">🎮 Gioca</button>
+          <span class="mini">UI mobile ottimizzata: circuito più grande, pannelli in alto.</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Suggerimenti</div>
+        <div class="mini">
+          • Incidenze ridotte e più realistiche (Monaco > prob. SC, Abu Dhabi < incidenti).<br>
+          • Pit automatici: ogni ~5 giri (gare ≤10) o ~7 giri (gare 15–25).<br>
+          • Tifosi animati con bandierine e ambienti dedicati per ogni pista.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" aria-hidden="true">
+  <div id="game">
+    <div class="row" style="justify-content:space-between;margin-bottom:8px;">
+      <div class="title">Race Director Sim – v4.1.3 Beta</div>
+      <div class="row">
+        <div class="pill"><span class="flag green"></span><span id="flagLabel">GREEN</span></div>
+      </div>
+    </div>
+    <canvas id="track" width="1280" height="760"></canvas>
+    <div class="hud">
+      <div>Giro: <span id="lap" class="stat">1</span>/<span id="maxLap" class="stat">10</span></div>
+      <div>Safety Car: <span id="scStatus" class="stat">Off</span></div>
+      <div>Meteo: <span id="weatherTxt" class="stat">Auto</span></div>
+      <div>Pit: <span id="pitInfo" class="stat">—</span></div>
+      <div>Punteggio: <span id="score" class="stat">0</span></div>
+    </div>
+    <div id="incidentBox" class="notice" style="display:none;margin-top:8px;"></div>
+  </div>
+
+  <div id="ui">
+    <div class="title">Controlli bandiere</div>
+    <div class="row">
+      <button id="btnGreen">🟩 Verde</button>
+      <button id="btnYellow">🟨 Gialla</button>
+      <button id="btnSC">🚗 Safety Car</button>
+      <button id="btnRed">🟥 Rossa</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="title">Penalità</div>
+    <div class="row"><select id="carSelect"></select></div>
+    <div class="row">
+      <button data-pen="+5s">+5s</button>
+      <button data-pen="+10s">+10s</button>
+      <button data-pen="DT">Drive-through</button>
+      <button data-pen="SG10">Stop&Go 10s</button>
+      <button data-pen="BLACK">Bandiera Nera</button>
+      <button id="btnClearPen">Annulla ultima</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="title">Gara</div>
+    <div class="row">
+      <button id="btnPause">⏸️ Pausa</button>
+      <button id="btnResume">▶️ Riprendi</button>
+      <button id="btnRestart">🔁 Nuova Gara</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="card">
+      <div class="title" style="font-size:16px;">Note Beta</div>
+      <div class="mini">
+        Grafica migliorata, incidenti meno frequenti e coerenti con la pista, tifosi animati, meteo dinamico, pit realistici.
+      </div>
+    </div>
+
+    <div id="diag" class="mini" style="display:none;background:#2a1b1b;border:1px solid #8b3a3a;border-radius:8px;padding:8px;white-space:pre-wrap"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const diag = document.getElementById('diag');
+  const log = m => { diag.style.display='block'; diag.textContent += (diag.textContent?'\n':'')+m; };
+  window.onerror = (msg,src,ln,col)=>log("Errore: "+msg+" @ "+ln+":"+col);
+
+  // ===== Canvas & HUD =====
+  const canvas = document.getElementById('track');
+  const ctx = canvas.getContext('2d', { alpha:false });
+  const W = canvas.width, H = canvas.height;
+
+  const elLap = document.getElementById('lap');
+  const elMaxLap = document.getElementById('maxLap');
+  const elSC = document.getElementById('scStatus');
+  const elScore = document.getElementById('score');
+  const elFlagLabel = document.getElementById('flagLabel');
+  const elWeatherTxt = document.getElementById('weatherTxt');
+  const elIncident = document.getElementById('incidentBox');
+  const elPitInfo = document.getElementById('pitInfo');
+
+  // ===== Menu =====
+  const menu = document.getElementById('menu');
+  const optLaps = document.getElementById('optLaps');
+  const optDiff = document.getElementById('optDiff');
+  const optTrack = document.getElementById('optTrack');
+  const optWeather = document.getElementById('optWeather');
+  document.getElementById('btnPlayNow').onclick = ()=>{};
+  document.getElementById('btnTutorial').onclick = ()=> alert(
+`Tocca “Gioca ora”, scegli giri/pista/difficoltà e premi “Gioca”.
+Durante la gara:
+• Bandiere: Verde/Gialla/Safety Car/Rossa
+• Penalità: drive-through, stop&go, +5s/+10s, nera
+• Meteo: influisce su aderenza e visibilità (più scivolosa con pioggia)
+• Pit: automatici ogni 5 o 7 giri con sosta e rientro
+• UI mobile: incidenti e bandiere sono in alto, il circuito è più grande`);
+
+  // ===== Tracks (approx polylines normalized) =====
+  const TRACKS = {
+    imola: [[-0.25,-0.95],[ 0.55,-0.92],[ 0.80,-0.70],[ 0.88,-0.35],[ 0.75,-0.05],[ 0.40,0.00],[ 0.10,0.10],[-0.10,0.35],[-0.25,0.60],[-0.40,0.85],[-0.70,0.95],[-0.90,0.75],[-0.88,0.40],[-0.70,0.10],[-0.40,-0.05],[-0.10,-0.25],[0.05,-0.55],[0.00,-0.80],[-0.10,-0.92],[-0.25,-0.95]],
+    monza: [[ 0.90,-0.90],[ 0.10,-0.90],[-0.50,-0.80],[-0.85,-0.55],[-0.90,-0.20],[-0.65,0.05],[-0.30,0.05],[-0.05,0.00],[ 0.20,-0.10],[ 0.45,-0.05],[ 0.70,0.10],[ 0.85,0.35],[ 0.80,0.60],[ 0.55,0.80],[ 0.20, 0.90],[-0.20,0.90],[-0.65,0.85],[-0.90,0.70],[-0.95,0.45],[-0.85,0.15],[-0.55,-0.05],[-0.10,-0.15],[ 0.50,-0.20],[ 0.90,-0.30],[ 0.95,-0.60],[ 0.90,-0.90]],
+    // Monaco (cittadino)
+    monaco: [[-0.85,-0.40],[-0.60,-0.50],[-0.35,-0.55],[-0.05,-0.52],[0.15,-0.42],[0.25,-0.28],[0.22,-0.10],[0.05,0.05],[-0.15,0.10],[-0.35,0.12],[-0.55,0.20],[-0.65,0.35],[-0.60,0.52],[-0.40,0.65],[-0.15,0.70],[0.10,0.65],[0.35,0.50],[0.55,0.32],[0.70,0.12],[0.78,-0.08],[0.70,-0.28],[0.50,-0.40],[0.20,-0.45],[-0.10,-0.45],[-0.45,-0.42],[-0.70,-0.38],[-0.85,-0.40]],
+    // Abu Dhabi (Yas Marina)
+    abudhabi: [[-0.80,-0.60],[-0.30,-0.70],[0.10,-0.72],[0.45,-0.60],[0.70,-0.35],[0.80,-0.05],[0.70,0.20],[0.45,0.38],[0.10,0.45],[-0.25,0.42],[-0.55,0.30],[-0.75,0.10],[-0.70,-0.10],[-0.55,-0.30],[-0.35,-0.45],[-0.10,-0.52],[0.25,-0.50],[0.55,-0.35],[0.65,-0.10],[0.60,0.10],[0.40,0.28],[0.15,0.35],[-0.15,0.30],[-0.45,0.18],[-0.65,-0.02],[-0.75,-0.32],[-0.80,-0.60]]
+  };
+
+  function buildPath(poly, padding= (window.innerWidth<980?60:80) ){
+    const xs = poly.map(p=>p[0]), ys = poly.map(p=>p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const s = Math.min((W-2*padding)/(maxX-minX),(H-2*padding)/(maxY-minY));
+    const ox = padding - minX*s, oy = padding - minY*s;
+    const pts = poly.map(([x,y])=>({x:x*s+ox, y:y*s+oy}));
+    let cum=[0], segs=[], len=0;
+    for(let i=1;i<pts.length;i++){
+      const dx=pts[i].x-pts[i-1].x, dy=pts[i].y-pts[i-1].y; const L=Math.hypot(dx,dy);
+      segs.push({a:pts[i-1], b:pts[i], dx, dy, L}); len+=L; cum.push(len);
+    }
+    return {pts,segs,cum,total:len};
+  }
+  function posOnPath(path, dist){
+    const d = (dist%path.total+path.total)%path.total;
+    let i=1; while(i<path.cum.length && path.cum[i]<d) i++;
+    const d0=path.cum[i-1], d1=path.cum[i], t=(d-d0)/Math.max(1e-6,(d1-d0));
+    const a=path.segs[i-1].a, b=path.segs[i-1].b;
+    const x=a.x+(b.x-a.x)*t, y=a.y+(b.y-a.y)*t; const tx=b.x-a.x, ty=b.y-a.y;
+    const ang=Math.atan2(ty,tx), nx=-Math.sin(ang), ny=Math.cos(ang);
+    return {x,y,ang,nx,ny};
+  }
+
+  // ===== Procedural “HD” background + meteo =====
+  function drawAsphalt(){
+    ctx.fillStyle="#0c1120"; ctx.fillRect(0,0,W,H);
+    const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)/4,W/2,H/2,Math.max(W,H)/1.1);
+    g.addColorStop(0,"#0c1120"); g.addColorStop(1,"#070b15"); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  }
+
+  let weather="sunny", rainDrops=[];
+  function setWeather(mode){
+    if(mode==="auto"){
+      const r=Math.random();
+      weather = r<0.6 ? "sunny" : (r<0.8 ? "cloudy" : (Math.random()<0.6?"rainLight":"rainHeavy"));
+    } else weather = mode;
+    elWeatherTxt.textContent = weather==="sunny"?"Sole":weather==="cloudy"?"Nuvoloso":weather==="rainLight"?"Pioggia leggera":"Pioggia forte";
+  }
+  function drawWeather(){
+    if(weather==="cloudy"){
+      ctx.globalAlpha=.15; ctx.fillStyle="#9db0cc";
+      for(let i=0;i<6;i++){ ctx.beginPath(); ctx.ellipse((i*210+50)%W,80+(i%3)*25,160,40,0,0,Math.PI*2); ctx.fill(); }
+      ctx.globalAlpha=1;
+    } else if(weather==="rainLight" || weather==="rainHeavy"){
+      const count = weather==="rainHeavy"? 260 : 140;
+      if(rainDrops.length<count) for(let i=rainDrops.length;i<count;i++) rainDrops.push({x:Math.random()*W,y:Math.random()*H,v:(weather==="rainHeavy"?4:2)+Math.random()*4});
+      ctx.strokeStyle="#9ec5ff"; ctx.lineWidth=1; ctx.globalAlpha= weather==="rainHeavy"? 0.8 : 0.6;
+      rainDrops.forEach(d=>{ ctx.beginPath(); ctx.moveTo(d.x,d.y); ctx.lineTo(d.x+2,d.y+8); ctx.stroke(); d.x+=1.5; d.y+=d.v; if(d.y>H) d.y=-10; if(d.x>W) d.x=0; });
+      ctx.globalAlpha=1;
+    }
+  }
+  function gripMultiplier(){
+    if(weather==="sunny") return 1.0;
+    if(weather==="cloudy") return 0.96;
+    if(weather==="rainLight") return 0.88;
+    return 0.78; // rainHeavy
+  }
+
+  // ===== Fans (animated crowd) =====
+  let fans=[];
+  function makeFans(path, gap=38, bands=4){
+    const res=[], colors=["#ff5252","#ffd600","#00e676","#40c4ff","#e040fb","#ffab40","#f06292"];
+    for(const side of [-1,1]){
+      for(let d=0; d<path.total; d+=gap){
+        const p=posOnPath(path,d);
+        for(let b=0;b<bands;b++){
+          const off=34 + b*16; const fx=p.x+p.nx*off*side, fy=p.y+p.ny*off*side;
+          res.push({x:fx,y:fy,phase:Math.random()*6.28,amp:1.5+Math.random()*2.5,color:colors[(b+(side>0?1:0))%colors.length]});
+        }
+      }
+    }
+    return res;
+  }
+  function drawFans(time){
+    for(const f of fans){
+      const bob = Math.sin(time*0.003 + f.phase) * f.amp;
+      ctx.fillStyle=f.color; ctx.beginPath(); ctx.arc(f.x, f.y+bob, 2.6, 0, Math.PI*2); ctx.fill();
+      if(((f.phase*1000)|0)%19===0){ // bandierina
+        ctx.strokeStyle="#d7dbe6"; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(f.x,f.y+bob); ctx.lineTo(f.x+6,f.y-10+bob); ctx.stroke();
+        ctx.fillStyle=f.color; ctx.fillRect(f.x+6,f.y-10+bob,7,4);
+      }
+    }
+  }
+
+  // ===== Track + scenografie =====
+  function drawTrack(path, trackKey){
+    // scenografie dedicate
+    if(trackKey==="monaco"){
+      // marina/yacht stilizzati
+      ctx.fillStyle="#0b2a3a"; ctx.fillRect(0,H-120,W,120);
+      for(let i=0;i<6;i++){ ctx.fillStyle="#d0edf7"; ctx.fillRect(60+i*200,H-90,120,34); }
+    }
+    if(trackKey==="abudhabi"){
+      // skyline/yas hotel stilizzato
+      ctx.fillStyle="#102144"; ctx.fillRect(0,0,W,80);
+      for(let i=0;i<10;i++){ ctx.fillStyle="#1d2f66"; ctx.fillRect(i*140,20,80,40); }
+      ctx.globalAlpha=.08; ctx.fillStyle="#ffe082"; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1;
+    }
+
+    drawFans(performance.now());
+
+    // pista
+    ctx.strokeStyle="#41557d"; ctx.lineWidth=38; ctx.lineJoin="round"; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(path.pts[0].x, path.pts[0].y); for(let i=1;i<path.pts.length;i++) ctx.lineTo(path.pts[i].x, path.pts[i].y); ctx.stroke();
+    ctx.strokeStyle="#6b8bbd"; ctx.lineWidth=2; ctx.setLineDash([12,12]);
+    ctx.beginPath(); ctx.moveTo(path.pts[0].x, path.pts[0].y); for(let i=1;i<path.pts.length;i++) ctx.lineTo(path.pts[i].x, path.pts[i].y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // ===== Pit lane =====
+  let pit=null;
+  function buildPit(path){
+    const start = posOnPath(path, 0);
+    const nx=start.nx, ny=start.ny, ang=start.ang;
+    const off=58, len=300, w=18;
+    const px = start.x + nx*off, py = start.y + ny*off;
+    const vx = Math.cos(ang), vy=Math.sin(ang), npx=-vy, npy=vx;
+    const p1 = {x:px - vx*len*0.5, y:py - vy*len*0.5};
+    const p2 = {x:px + vx*len*0.5, y:py + vy*len*0.5};
+    const rect = [
+      {x:p1.x + npx*w, y:p1.y + npy*w}, {x:p2.x + npx*w, y:p2.y + npy*w},
+      {x:p2.x - npx*w, y:p2.y - npy*w}, {x:p1.x - npx*w, y:p1.y - npy*w}
+    ];
+    const stalls=[]; for(let i=0;i<6;i++){ const t=(i+0.5)/6; stalls.push({x:p1.x+(p2.x-p1.x)*t, y:p1.y+(p2.y-p1.y)*t}); }
+    return {entry:40, exit: 170, rect, ang, stalls};
+  }
+  function drawPit(){
+    if(!pit) return;
+    ctx.fillStyle="#273154"; ctx.beginPath();
+    ctx.moveTo(pit.rect[0].x,pit.rect[0].y); for(let i=1;i<pit.rect.length;i++) ctx.lineTo(pit.rect[i].x,pit.rect[i].y);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#c5d4ff"; ctx.font="14px monospace"; ctx.fillText("PIT", pit.rect[0].x, pit.rect[0].y-8);
+    ctx.strokeStyle="#90a4ae"; ctx.lineWidth=1.4;
+    for(const s of pit.stalls){ ctx.beginPath(); ctx.moveTo(s.x-12,s.y-6); ctx.lineTo(s.x+12,s.y-6); ctx.stroke(); }
+  }
+
+  // ===== Cars =====
+  const TEAMS=["Aquila GP","Vortex","Nebula","Artemis","Orion","Tempest","Falconet","Helios","Quartz","Zenith","Argon","Volta"];
+  const COLORS=["#e10600","#00d2be","#0600ef","#ff9800","#2b2d42","#00c853","#8e24aa","#ffd600","#ff1744","#40c4ff","#64ffda","#b388ff"];
+
+  function drawF1(x,y,ang,color,num){
+    ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
+    const L=40,Wc=13;
+    // shadow
+    ctx.globalAlpha=.35; ctx.fillStyle="#000"; ctx.beginPath(); ctx.ellipse(3,4,L*.6,Wc*.95,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+    // wings
+    ctx.fillStyle="#e3e7f1"; ctx.fillRect(-L/2-10,-Wc,12,Wc*2); ctx.fillRect(L/2-6,-Wc*.8,8,Wc*1.6);
+    // body
+    ctx.fillStyle=color; ctx.fillRect(-L/2+4, -Wc/2, L-8, Wc);
+    // nose
+    ctx.beginPath(); ctx.moveTo(-L/2+2,-Wc*0.25); ctx.lineTo(-L/2-7,0); ctx.lineTo(-L/2+2,Wc*0.25); ctx.closePath(); ctx.fill();
+    // cockpit + halo
+    ctx.fillStyle="#141821"; ctx.fillRect(-5,-Wc*.40,10,Wc*.8); ctx.fillStyle="#0d1117"; ctx.fillRect(-1,-Wc*.55,2,Wc*1.1);
+    // tyres
+    ctx.fillStyle="#0b0b0e"; const r=4;
+    for(const p of [[-L/4,-Wc/2-3],[-L/4,Wc/2+3],[L/4,-Wc/2-3],[L/4,Wc/2+3]]){
+      ctx.beginPath(); ctx.arc(p[0],p[1],r,0,Math.PI*2); ctx.fill();
+    }
+    // number on nose
+    ctx.fillStyle="#fff"; ctx.fillRect(-L/2+3,-7,16,14);
+    ctx.fillStyle="#111"; ctx.font="10px monospace"; const s=String(num); const off=s.length===1?3.5:0.5; ctx.fillText(s,-L/2+5+off,3);
+    // number on engine cover
+    ctx.fillStyle="#fff"; ctx.fillRect(-6,-6,12,12); ctx.fillStyle="#111"; ctx.fillText(s,-4,3);
+    ctx.restore();
+  }
+
+  // ===== Game state =====
+  const N=12;
+  let cars=[], penaltiesHistory=[];
+  let running=false, raceOver=false, flag="GREEN", safetyCar=false, score=0;
+  let incident=null, incidentTimer=0;
+  let last=performance.now(); let currPath=null, fansData=[];
+  let maxLap=10; let pitData=null; let trackKey="imola";
+  let diff="med"; let weatherMode="auto";
+
+  function newGrid(){
+    cars=[]; const sh=[...TEAMS].sort(()=>Math.random()-0.5);
+    const f=diffFactors();
+    for(let i=0;i<N;i++){
+      const team=sh[i%sh.length], color=COLORS[i%COLORS.length];
+      const base = (90 + Math.random()*25) * f.spd * (0.96 + Math.random()*f.var);
+      cars.push({id:i,team,color,number:2+i, dist:i*60, baseSpeed:base, speed:base,
+                 lap:1, finished:false, totalTime:0, penalties:[], dtPending:false, sgPending:0, dsq:false,
+                 mode:"race", pitTimer:0, nextPitLap:0});
+    }
+    const sel=document.getElementById('carSelect'); sel.innerHTML="";
+    cars.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=`#${c.number} ${c.team}`; sel.appendChild(o); });
+  }
+
+  function diffFactors(){
+    if(diff==="easy") return {spd:0.95, var:0.06, inc:0.8};
+    if(diff==="hard") return {spd:1.05, var:0.12, inc:1.2};
+    return {spd:1.00, var:0.09, inc:1.0};
+  }
+
+  function applyLapOptions(){
+    maxLap = parseInt(document.getElementById('optLaps').value,10); elMaxLap.textContent=maxLap;
+    const cadence = (maxLap<=10)?5:7;
+    for(const c of cars){ c.nextPitLap = 1 + cadence + (Math.random()<0.5?0:1); }
+  }
+
+  // ===== Incident model per pista =====
+  function trackIncidentFactor(key){
+    if(key==="monaco") return 1.25;   // più probabile
+    if(key==="abudhabi") return 0.75; // meno probabile
+    return 1.0;
+  }
+
+  function maybeIncident(dtMs){
+    incidentTimer -= dtMs;
+    if(incident || incidentTimer>0) return;
+    const f=diffFactors();
+    // base bassa per realismo + fattori meteo e pista
+    let base = 0.0015 * f.inc * trackIncidentFactor(trackKey);
+    base *= (weather==="rainHeavy"? 1.6 : weather==="rainLight"? 1.25 : 1.0);
+    if(Math.random() < base * (dtMs/16.7) * (flag==="SC"||flag==="RED"?0:1)){
+      const types=[
+        {type:"Spin", sev:"LOW", rec:"YELLOW", msg:"Testacoda, riparte"},
+        {type:"Debris", sev:"MED", rec:"YELLOW", msg:"Detriti in pista"},
+        {type:"Crash", sev:"HIGH", rec:"SC", msg:"Auto ferma in posizione pericolosa"},
+        {type:"BigCrash", sev:"EXTREME", rec:"RED", msg:"Barriere da ripristinare"}
+      ];
+      let pick;
+      if(trackKey==="monaco" && Math.random()<0.5) pick=types[0]; else pick=types[Math.floor(Math.random()*types.length)];
+      const active=cars.filter(c=>!c.finished&&!c.dsq);
+      const victim = active.length? active[Math.floor(Math.random()*active.length)] : null;
+      incident={...pick, carId: victim?victim.id:null, ttl: 9000};
+      const carTxt = incident.carId!==null ? ` (#${cars[incident.carId].number} ${cars[incident.carId].team})` : "";
+      elIncident.innerHTML = `⚠️ <b>INCIDENTE:</b> ${incident.type}${carTxt} — <i>${incident.msg}</i> <span class="mini">(Consiglio: ${incident.rec})</span>`;
+      elIncident.style.display='block';
+      const start=performance.now();
+      const tick=()=>{ if(!incident) return; if(performance.now()-start>incident.ttl){ resolveIncident(false); return; } requestAnimationFrame(tick); }; requestAnimationFrame(tick);
+    } else {
+      incidentTimer = 2200 + Math.random()*4200;
+    }
+  }
+  function resolveIncident(byAction){
+    if(!incident){ elIncident.style.display='none'; return; }
+    const ok = flag===incident.rec || (incident.rec==="SC" && flag==="YELLOW" && safetyCar);
+    score += byAction ? (ok?10:-6) : -4;
+    elIncident.style.display='none'; incident=null;
+  }
+
+  // ===== Draw =====
+  function drawHUD(){
+    const ml = Math.max(...cars.map(c=>c.lap)); elLap.textContent = isFinite(ml)? ml : 1;
+    elSC.textContent = safetyCar? "On":"Off";
+    elScore.textContent = Math.floor(score);
+    elFlagLabel.textContent = flag;
+    elFlagLabel.previousElementSibling.className = "flag " + (flag==="GREEN"?"green":flag==="YELLOW"?"yellow":flag==="RED"?"red":"sc");
+  }
+
+  function drawCars(){
+    for(const c of cars){
+      if(c.dsq) continue;
+      if(c.mode==="race"){
+        const p=posOnPath(currPath,c.dist); drawF1(p.x,p.y,p.ang,c.color,c.number);
+      }else{
+        const stall = pitData.stalls[c.id % pitData.stalls.length];
+        let px=stall.x, py=stall.y, a=pitData.ang;
+        if(c.mode==="pit_entry"){
+          const from = posOnPath(currPath, c.dist);
+          const t = Math.min(1,c.pitTimer); px = from.x*(1-t)+stall.x*t; py=from.y*(1-t)+stall.y*t; a=pitData.ang;
+        }
+        drawF1(px,py,a,c.color,c.number);
+      }
+    }
+    if(safetyCar){
+      const p=posOnPath(currPath, (performance.now()/8)%currPath.total);
+      ctx.fillStyle="#ffd600"; ctx.beginPath(); ctx.arc(p.x,p.y,11,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#000"; ctx.font="10px monospace"; ctx.fillText("SC",p.x-7,p.y+4);
+    }
+  }
+
+  function update(dtMs){
+    if(!running||raceOver) return;
+    const dt=dtMs/1000, grip=gripMultiplier();
+    let mult=1.0; if(flag==="YELLOW") mult=.65*grip; else if(flag==="SC") mult=.45*grip; else if(flag==="RED") mult=0.0; else mult *= grip;
+
+    let pitNow=[];
+    for(const c of cars){
+      if(c.finished||c.dsq) continue;
+
+      if(c.mode==="race"){
+        c.speed = c.baseSpeed*mult;
+        c.dist += c.speed*dt;
+        if(c.dist>currPath.total){ c.dist-=currPath.total; c.lap+=1; if(c.lap>maxLap) c.finished=true; }
+
+        // pit schedule
+        const cadence = (maxLap<=10)?5:7;
+        if(c.lap===c.nextPitLap){
+          const nearEntry = c.dist < pitData.entry + 40;
+          if(nearEntry){
+            c.mode="pit_entry"; c.pitTimer=0; pitNow.push("#"+c.number);
+            c.nextPitLap += cadence + (Math.random()<0.5?0:1);
+          }
+        }
+      }else if(c.mode==="pit_entry"){
+        c.pitTimer += dt*0.8; if(c.pitTimer>=1){ c.mode="pit_stop"; c.pitTimer = 1800 + Math.random()*1400; }
+      }else if(c.mode==="pit_stop"){
+        c.pitTimer -= dtMs; if(c.pitTimer<=0){ c.mode="pit_exit"; c.pitTimer=0; }
+      }else if(c.mode==="pit_exit"){
+        const to = posOnPath(currPath, pitData.exit);
+        const stall = pitData.stalls[c.id % pitData.stalls.length];
+        c.pitTimer += dt*0.9; const t=Math.min(1,c.pitTimer);
+        if(t>=1){ c.mode="race"; c.dist = pitData.exit + 6; }
+      }
+
+      c.totalTime += dtMs;
+    }
+
+    if(pitNow.length) elPitInfo.textContent = pitNow.join(", ");
+
+    maybeIncident(dtMs);
+
+    if(cars.every(c=>c.finished||c.dsq)) finishRace();
+  }
+
+  function draw(){
+    drawAsphalt();
+    drawWeather();
+    drawTrack(currPath, trackKey);
+    drawPit();
+    drawCars();
+    drawHUD();
+  }
+
+  function finishRace(){
+    raceOver=true; running=false;
+    const res=cars.slice().filter(c=>!c.dsq).sort((a,b)=>a.totalTime-b.totalTime);
+    res.forEach(c=> c.penSecs = c.penalties.reduce((s,p)=>s+p.secs,0));
+    const out=res.sort((a,b)=>(a.totalTime+a.penSecs)-(b.totalTime+b.penSecs))
+      .map((c,i)=>`${i+1}. #${c.number} ${c.team} — ${(c.totalTime/1000).toFixed(1)}s${c.penSecs?` (+${c.penSecs.toFixed(1)}s)`:''}`).join("<br>");
+    elIncident.style.display='block';
+    elIncident.innerHTML = `🏁 <b>FINE GARA</b><br>${out}<br><br><i>Usa "Nuova Gara" per ricominciare.</i>`;
+  }
+
+  // ===== Controls =====
+  function setFlag(newFlag){ if(raceOver) return; flag=newFlag; safetyCar=(newFlag==="SC"); if(incident) resolveIncident(true); }
+  document.getElementById('btnGreen').onclick=()=>setFlag("GREEN");
+  document.getElementById('btnYellow').onclick=()=>setFlag("YELLOW");
+  document.getElementById('btnSC').onclick=()=>setFlag("SC");
+  document.getElementById('btnRed').onclick=()=>setFlag("RED");
+
+  document.querySelectorAll('button[data-pen]').forEach(b=>{
+    b.onclick=()=>{
+      const type=b.getAttribute('data-pen'); const id=parseInt(document.getElementById('carSelect').value,10);
+      const car=cars.find(c=>c.id===id); if(!car||raceOver) return;
+      if(type==="BLACK"){ car.dsq=true; penaltiesHistory.push({id,type,secs:0}); return; }
+      if(type==="DT"){ car.dtPending=true; penaltiesHistory.push({id,type,secs:0}); return; }
+      if(type==="SG10"){ car.sgPending=Math.max(c.sgPending,2500); car.penalties.push({type,secs:10}); penaltiesHistory.push({id,type,secs:10}); return; }
+      if(type==="+5s"||type==="+10s"){ const secs=type==="+5s"?5:10; car.penalties.push({type,secs}); penaltiesHistory.push({id,type,secs}); }
+    };
+  });
+  document.getElementById('btnClearPen').onclick=()=>{
+    const last=penaltiesHistory.pop(); if(!last) return; const car=cars.find(c=>c.id===last.id); if(!car) return;
+    if(last.type==="BLACK") car.dsq=false;
+    if(last.type==="DT") car.dtPending=false;
+    if(last.type==="SG10"){ car.sgPending=0; const i=car.penalties.findIndex(p=>p.type==="SG10"&&p.secs===10); if(i>=0) car.penalties.splice(i,1); }
+    if(last.type==="+5s"||type==="+10s"){ const i=car.penalties.findIndex(p=>p.type===last.type&&p.secs===last.secs); if(i>=0) car.penalties.splice(i,1); }
+  };
+
+  document.getElementById('btnPause').onclick=()=>{ running=false; };
+  document.getElementById('btnResume').onclick=()=>{ running=true; };
+  document.getElementById('btnRestart').onclick=()=> startRace(true);
+
+  // ===== Start / Init =====
+  function selectTrack(key){
+    trackKey=key;
+    currPath = buildPath(TRACKS[key]);
+    fans = makeFans(currPath, 38, 4);
+    pit = buildPit(currPath);
+  }
+
+  function startRace(reset){
+    running=false; raceOver=false; flag="GREEN"; safetyCar=false; score=0; incident=null; incidentTimer=1200+Math.random()*1400;
+    selectTrack(document.getElementById('optTrack').value);
+    diff = document.getElementById('optDiff').value;
+    weatherMode = document.getElementById('optWeather').value;
+    setWeather(weatherMode);
+    newGrid(); applyLapOptions();
+    draw();
+    running=true;
+    elPitInfo.textContent="—";
+    if(reset){ elIncident.style.display='none'; }
+  }
+
+  document.getElementById('btnStart').onclick=()=>{
+    startRace(true);
+    menu.style.display='none';
+    document.querySelector('.wrap').setAttribute('aria-hidden','false');
+  };
+
+  // Mobile tap → resume
+  canvas.addEventListener('pointerdown', ()=>{ running=true; });
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) running=true; });
+
+  // Pre-render per il menu
+  selectTrack("imola"); setWeather("sunny");
+  function loop(now){ const dt=now-(window.__lastT||now); window.__lastT=now; if(running) { update(dt); } draw(); requestAnimationFrame(loop); }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
