@@ -28,6 +28,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
 
 /* MENU */
 #menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(80% 80% at 50% 40%, #1a2744 0%, #0b142a 70%)}
+#menu.hidden{display:none !important}
 .menu-card{width:min(980px,96vw);background:#0f1730;border:1px solid var(--stroke);border-radius:16px;padding:16px;box-shadow:0 10px 40px #0008}
 .banner{background:linear-gradient(120deg,#1d2c52,#14264a 55%, #1a2238);border:1px solid #2a3f70;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between}
 .btnPrimary{background:#e10600;border:0;color:#fff;border-radius:10px;padding:12px 16px;font-weight:800}
@@ -319,8 +320,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
       const p=posOnPath(path,d); const w=22;
       ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.ang);
       ctx.fillStyle = (Math.floor(d/step)%2)? "#e6e9f2":"#e10600";
-      ctx.fillRect(-w/2,-22, w, 8);
-      ctx.fillRect(-w/2, 14, w, 8);
+      ctx.fillRect(-w/2,-22, w, 8); ctx.fillRect(-w/2, 14, w, 8);
       ctx.restore();
     }
     ctx.strokeStyle="#cfd8ef"; ctx.lineWidth=3; ctx.setLineDash([14,14]); ctx.beginPath(); ctx.moveTo(path.pts[0].x,path.pts[0].y); for(let i=1;i<path.pts.length;i++)ctx.lineTo(path.pts[i].x,path.pts[i].y); ctx.stroke(); ctx.setLineDash([]);
@@ -507,19 +507,19 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   function newRaceSetup(){ buildPathAndPit(optTrack.value); setWeather(optWeather.value); newGrid(); applyLapOptions(); HUD.pit.textContent="—"; HUD.inc.style.display='none'; }
   function startRace(){ running=false; raceOver=false; flag="GREEN"; safetyCar=false; score=0; incident=null; scheduleIncident(); scheduleInfraction(); newRaceSetup(); running=true; }
 
-  /* ====== BIND SICURO DEI BOTTONI MENU (FIX) ====== */
-  document.addEventListener("DOMContentLoaded", () => {
-    const safeStart = () => { startRace(); menu.style.display='none'; resizeCanvas(); drawOnce(); scrollToTrack(); };
-    const byId = id => document.getElementById(id);
+  /* ====== BIND DEFINITIVO BOTTONI MENU ====== */
+  (function bindMenuButtons(){
+    const byId = (id)=>document.getElementById(id);
+    const startButtons = ["btnPlayNow","btnStart","btnPlay"].map(byId).filter(Boolean);
+    const tutorial = byId("btnTutorial");
+    const closeMenu = ()=> menu.classList.add("hidden");
+    const startGame = (e)=>{ e?.preventDefault?.(); startRace(); closeMenu(); resizeCanvas(); drawOnce(); scrollToTrack(); };
 
-    byId("btnPlayNow") && byId("btnPlayNow").addEventListener("click", safeStart, {passive:true});
-    byId("btnStart")   && byId("btnStart").addEventListener("click", safeStart, {passive:true});
-    byId("btnPlay")    && byId("btnPlay").addEventListener("click", safeStart, {passive:true}); // alias eventuale
-
-    byId("btnTutorial") && byId("btnTutorial").addEventListener("click", () => {
-      alert("Sei il Direttore di Gara: scegli giri/pista/difficoltà, poi premi Gioca.\nGestisci bandiere (Verde/Gialla/SC/Rossa) e assegna penalità dal pannello.\nIncidenti ogni 5–20s con messaggio 'incidente risolto'.");
-    });
-  });
+    startButtons.forEach(btn=> btn.addEventListener("click", startGame, {passive:true}));
+    tutorial && tutorial.addEventListener("click", ()=> alert(
+      "Sei il Direttore di Gara:\n• Scegli giri/pista/difficoltà e premi Gioca.\n• Bandiere: Verde/Gialla/SC/Rossa.\n• Penalità dal pannello a destra.\n• Incidenti ogni 5–20s con messaggio 'incidente risolto'."
+    ));
+  })();
 
   /* ===== Preview iniziale ===== */
   buildPathAndPit("imola"); setWeather("sunny"); seedBackground(); resizeCanvas(); drawOnce();
