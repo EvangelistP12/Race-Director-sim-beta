@@ -35,14 +35,12 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
 .card{background:var(--panel2);border:1px solid var(--stroke);border-radius:12px;padding:10px}
 .label{font-size:12px;color:var(--muted);margin-bottom:6px}
 
-/* MOBILE RE-DESIGN + NUOVO ORDINE PANNELLI */
+/* MOBILE RE-DESIGN + ORDINE PANNELLI */
 @media (max-width:980px){
   .wrap{grid-template-columns:1fr}
   #game{order:-1}
   #ui{order:0;display:flex;flex-direction:column}
-  /* canvas più alto e ben visibile */
   canvas{aspect-ratio:10/13;min-height:70vh}
-  /* ordine pannelli UI: bandiere -> penalità -> gara -> classifica */
   #flagsBlock{order:1}
   #penBlock{order:2}
   #raceBlock{order:3}
@@ -100,7 +98,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     <div id="incidentBox" class="notice" style="display:none;margin-top:8px;"></div>
   </div>
 
-  <!-- ===== UI ORDINATA (con ID per l’ordine mobile) ===== -->
+  <!-- ===== UI ORDINATA (mobile: bandiere & penalità prima della classifica) ===== -->
   <div id="ui">
     <!-- Bandiere -->
     <section id="flagsBlock">
@@ -146,7 +144,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
 
     <div class="divider"></div>
 
-    <!-- Classifica in tempo reale (spostata in fondo su mobile) -->
+    <!-- Classifica -->
     <section id="leaderBlock">
       <div class="title">Classifica in tempo reale</div>
       <div class="card" style="max-height:300px;overflow:auto;margin-bottom:8px">
@@ -164,7 +162,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
       </div>
     </section>
 
-    <div class="card mini">Refit mobile: circuito grande, F1 ridisegnate, sfondo tribune veloce, meteo più realistico. UI mobile: bandiere & penalità sopra la classifica.</div>
+    <div class="card mini">Refit mobile: circuito grande, F1 ridisegnate, sfondo tribune veloce, meteo realistico. UI mobile: bandiere & penalità sopra la classifica.</div>
     <div id="diag" class="mini" style="display:none;background:#2a1b1b;border:1px solid #8b3a3a;border-radius:8px;padding:8px;white-space:pre-wrap"></div>
   </div>
 </div>
@@ -321,7 +319,8 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
       const p=posOnPath(path,d); const w=22;
       ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.ang);
       ctx.fillStyle = (Math.floor(d/step)%2)? "#e6e9f2":"#e10600";
-      ctx.fillRect(-w/2,-22, w, 8); ctx.fillRect(-w/2, 14, w, 8);
+      ctx.fillRect(-w/2,-22, w, 8);
+      ctx.fillRect(-w/2, 14, w, 8);
       ctx.restore();
     }
     ctx.strokeStyle="#cfd8ef"; ctx.lineWidth=3; ctx.setLineDash([14,14]); ctx.beginPath(); ctx.moveTo(path.pts[0].x,path.pts[0].y); for(let i=1;i<path.pts.length;i++)ctx.lineTo(path.pts[i].x,path.pts[i].y); ctx.stroke(); ctx.setLineDash([]);
@@ -372,7 +371,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     for(let i=0;i<N;i++){
       const team=order[i%order.length], color=COLORS[i%COLORS.length];
       const base=(100+Math.random()*28)*f.spd*(0.96+Math.random()*f.var);
-      cars.push({id:i,team,color,number:2+i,dist=i*70,baseSpeed:base,speed:base,lap:1,finished:false,totalTime:0,penalties:[],dsq:false,mode:"race",pitTimer:0,nextPitLap:0});
+      cars.push({id:i,team,color,number:2+i,dist:i*70,baseSpeed:base,speed:base,lap:1,finished:false,totalTime:0,penalties:[],dsq:false,mode:"race",pitTimer:0,nextPitLap:0});
     }
     const sel=$('carSelect'); sel.innerHTML=""; cars.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=`#${c.number} ${c.team}`;sel.appendChild(o)});
   }
@@ -429,7 +428,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   }
 
   /* ===== Infrazioni (solo avviso) ===== */
-  let nextInfraction=0, infraction=null, nextInfractionTimer=0;
+  let nextInfractionTimer=0, infraction=null;
   function scheduleInfraction(){ nextInfractionTimer = performance.now() + (12000 + Math.random()*13000); }
   function maybeInfraction(){
     if(infraction || performance.now()<nextInfractionTimer) return;
@@ -508,14 +507,19 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   function newRaceSetup(){ buildPathAndPit(optTrack.value); setWeather(optWeather.value); newGrid(); applyLapOptions(); HUD.pit.textContent="—"; HUD.inc.style.display='none'; }
   function startRace(){ running=false; raceOver=false; flag="GREEN"; safetyCar=false; score=0; incident=null; scheduleIncident(); scheduleInfraction(); newRaceSetup(); running=true; }
 
-  /* ===== Bind bottoni menu con scroll ===== */
-  (function bindMenu(){
-    const playNow=$('btnPlayNow'), start=$('btnStart'), tuto=$('btnTutorial');
-    const safeStart=()=>{ startRace(); menu.style.display='none'; resizeCanvas(); drawOnce(); scrollToTrack(); };
-    playNow.addEventListener('click', safeStart, {passive:true});
-    start.addEventListener('click', safeStart, {passive:true});
-    tuto.addEventListener('click', ()=>alert("Scegli giri/pista/difficoltà e premi Gioca.\nBandiere: Verde/Gialla/SC/Rossa.\nPenalità dal pannello.\nIncidenti ogni 5–20s con messaggio 'incidente risolto'.\nMobile: bandiere & penalità sopra la classifica."));
-  })();
+  /* ====== BIND SICURO DEI BOTTONI MENU (FIX) ====== */
+  document.addEventListener("DOMContentLoaded", () => {
+    const safeStart = () => { startRace(); menu.style.display='none'; resizeCanvas(); drawOnce(); scrollToTrack(); };
+    const byId = id => document.getElementById(id);
+
+    byId("btnPlayNow") && byId("btnPlayNow").addEventListener("click", safeStart, {passive:true});
+    byId("btnStart")   && byId("btnStart").addEventListener("click", safeStart, {passive:true});
+    byId("btnPlay")    && byId("btnPlay").addEventListener("click", safeStart, {passive:true}); // alias eventuale
+
+    byId("btnTutorial") && byId("btnTutorial").addEventListener("click", () => {
+      alert("Sei il Direttore di Gara: scegli giri/pista/difficoltà, poi premi Gioca.\nGestisci bandiere (Verde/Gialla/SC/Rossa) e assegna penalità dal pannello.\nIncidenti ogni 5–20s con messaggio 'incidente risolto'.");
+    });
+  });
 
   /* ===== Preview iniziale ===== */
   buildPathAndPit("imola"); setWeather("sunny"); seedBackground(); resizeCanvas(); drawOnce();
