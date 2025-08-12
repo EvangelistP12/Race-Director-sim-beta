@@ -35,15 +35,18 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
 .card{background:var(--panel2);border:1px solid var(--stroke);border-radius:12px;padding:10px}
 .label{font-size:12px;color:var(--muted);margin-bottom:6px}
 
-/* MOBILE RE-DESIGN */
+/* MOBILE RE-DESIGN + NUOVO ORDINE PANNELLI */
 @media (max-width:980px){
   .wrap{grid-template-columns:1fr}
   #game{order:-1}
-  #ui{order:0}
-  canvas{
-    aspect-ratio:10/13;     /* più alto */
-    min-height:70vh;        /* circuito grande e visibile */
-  }
+  #ui{order:0;display:flex;flex-direction:column}
+  /* canvas più alto e ben visibile */
+  canvas{aspect-ratio:10/13;min-height:70vh}
+  /* ordine pannelli UI: bandiere -> penalità -> gara -> classifica */
+  #flagsBlock{order:1}
+  #penBlock{order:2}
+  #raceBlock{order:3}
+  #leaderBlock{order:4}
 }
 </style>
 </head>
@@ -97,55 +100,71 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     <div id="incidentBox" class="notice" style="display:none;margin-top:8px;"></div>
   </div>
 
+  <!-- ===== UI ORDINATA (con ID per l’ordine mobile) ===== -->
   <div id="ui">
-    <div class="title">Classifica in tempo reale</div>
-    <div class="card" style="max-height:300px;overflow:auto;margin-bottom:8px">
-      <table style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums">
-        <thead class="mini" style="position:sticky;top:0;background:#13203b">
-          <tr><th style="text-align:left;padding:6px">#</th>
-              <th style="text-align:left;padding:6px">Team</th>
-              <th style="text-align:right;padding:6px">Pilota</th>
-              <th style="text-align:right;padding:6px">Giro</th>
-              <th style="text-align:right;padding:6px">Gap</th>
-              <th style="text-align:right;padding:6px">Pen</th></tr>
-        </thead>
-        <tbody id="tblBody"></tbody>
-      </table>
-    </div>
-
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <div class="title">Controlli bandiere</div>
-      <button id="btnJumpTrack">🎥 Vai al circuito</button>
-    </div>
-    <div class="row">
-      <button id="btnGreen">🟩 Verde</button>
-      <button id="btnYellow">🟨 Gialla</button>
-      <button id="btnSC">🚗 Safety Car</button>
-      <button id="btnRed">🟥 Rossa</button>
-    </div>
+    <!-- Bandiere -->
+    <section id="flagsBlock">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div class="title">Controlli bandiere</div>
+        <button id="btnJumpTrack">🎥 Vai al circuito</button>
+      </div>
+      <div class="row">
+        <button id="btnGreen">🟩 Verde</button>
+        <button id="btnYellow">🟨 Gialla</button>
+        <button id="btnSC">🚗 Safety Car</button>
+        <button id="btnRed">🟥 Rossa</button>
+      </div>
+    </section>
 
     <div class="divider"></div>
-    <div class="title">Penalità</div>
-    <div class="row"><select id="carSelect"></select></div>
-    <div class="row">
-      <button data-pen="+5s">+5s</button>
-      <button data-pen="+10s">+10s</button>
-      <button data-pen="DT">Drive-through</button>
-      <button data-pen="SG10">Stop&Go 10s</button>
-      <button data-pen="BLACK">Bandiera Nera</button>
-      <button id="btnClearPen">Annulla ultima</button>
-    </div>
+
+    <!-- Penalità -->
+    <section id="penBlock">
+      <div class="title">Penalità</div>
+      <div class="row"><select id="carSelect"></select></div>
+      <div class="row">
+        <button data-pen="+5s">+5s</button>
+        <button data-pen="+10s">+10s</button>
+        <button data-pen="DT">Drive-through</button>
+        <button data-pen="SG10">Stop&Go 10s</button>
+        <button data-pen="BLACK">Bandiera Nera</button>
+        <button id="btnClearPen">Annulla ultima</button>
+      </div>
+    </section>
 
     <div class="divider"></div>
-    <div class="title">Gara</div>
-    <div class="row">
-      <button id="btnPause">⏸️ Pausa</button>
-      <button id="btnResume">▶️ Riprendi</button>
-      <button id="btnRestart">🔁 Nuova Gara</button>
-    </div>
+
+    <!-- Gara -->
+    <section id="raceBlock">
+      <div class="title">Gara</div>
+      <div class="row">
+        <button id="btnPause">⏸️ Pausa</button>
+        <button id="btnResume">▶️ Riprendi</button>
+        <button id="btnRestart">🔁 Nuova Gara</button>
+      </div>
+    </section>
 
     <div class="divider"></div>
-    <div class="card mini">Refit mobile: circuito grande, F1 ridisegnate, sfondo tribune veloce, meteo più realistico.</div>
+
+    <!-- Classifica in tempo reale (spostata in fondo su mobile) -->
+    <section id="leaderBlock">
+      <div class="title">Classifica in tempo reale</div>
+      <div class="card" style="max-height:300px;overflow:auto;margin-bottom:8px">
+        <table style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums">
+          <thead class="mini" style="position:sticky;top:0;background:#13203b">
+            <tr><th style="text-align:left;padding:6px">#</th>
+                <th style="text-align:left;padding:6px">Team</th>
+                <th style="text-align:right;padding:6px">Pilota</th>
+                <th style="text-align:right;padding:6px">Giro</th>
+                <th style="text-align:right;padding:6px">Gap</th>
+                <th style="text-align:right;padding:6px">Pen</th></tr>
+          </thead>
+          <tbody id="tblBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="card mini">Refit mobile: circuito grande, F1 ridisegnate, sfondo tribune veloce, meteo più realistico. UI mobile: bandiere & penalità sopra la classifica.</div>
     <div id="diag" class="mini" style="display:none;background:#2a1b1b;border:1px solid #8b3a3a;border-radius:8px;padding:8px;white-space:pre-wrap"></div>
   </div>
 </div>
@@ -200,7 +219,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     return {x,y,ang,nx:-Math.sin(ang),ny:Math.cos(ang)};
   }
 
-  /* ===== Sfondo tribune animate (v4.1.2+) ===== */
+  /* ===== Sfondo tribune animate ===== */
   let bokeh=[],stands=[];
   function seedBackground(){
     bokeh = Array.from({length:22},()=>({
@@ -219,7 +238,6 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     const g = ctx.createLinearGradient(0,0,0,H);
     g.addColorStop(0,"#8eb0db"); g.addColorStop(0.55,"#5f83b6"); g.addColorStop(1,"#2b3c5f");
     ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-
     ctx.globalAlpha = 0.18;
     bokeh.forEach(b=>{
       const rad = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r);
@@ -230,12 +248,8 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
       if(b.y<-b.r) b.y=H+b.r; if(b.y>H+b.r) b.y=-b.r;
     });
     ctx.globalAlpha = 1;
-
-    // prato
     const G = Math.floor(H*0.34);
     ctx.fillStyle="#0e3c2d"; ctx.fillRect(0,H-G,W,G);
-
-    // tribune scorrevoli
     stands.forEach(s=>{
       ctx.globalAlpha = s.alpha;
       ctx.fillStyle = "#1b243a"; ctx.fillRect(s.x, s.y, s.w, s.h);
@@ -296,58 +310,41 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   function drawPit(){ if(!pit) return; ctx.fillStyle="#2a3f70";ctx.beginPath();ctx.moveTo(pit.rect[0].x,pit.rect[0].y);for(let i=1;i<pit.rect.length;i++)ctx.lineTo(pit.rect[i].x,pit.rect[i].y);ctx.closePath();ctx.fill(); ctx.fillStyle="#cfe2ff";ctx.font=Math.max(12,Math.floor(W/120))+"px monospace";ctx.fillText("PIT",pit.rect[0].x,pit.rect[0].y-8); }
   function buildPathAndPit(key){ trackKey=key; path=buildPath(TRACKS[key]); pit=buildPit(path); fans=makeFans(path); }
   function drawTrack(){
-    // elementi scenici
     if(trackKey==="monaco"){const G=Math.floor(H*0.34);ctx.fillStyle="#0c2a3e";ctx.fillRect(0,H-G-120,W,120);for(let i=0;i<6;i++){ctx.fillStyle="#c7e9f7";ctx.fillRect(60+i*220,H-G-90,120,34)}}
     if(trackKey==="abudhabi"){ctx.fillStyle="#0f2146";ctx.fillRect(0,0,W,90);for(let i=0;i<8;i++){ctx.fillStyle="#1b2f63";ctx.fillRect(i*160,18,90,44)}}
     drawFans(performance.now());
-
-    // strada con cordoli
     ctx.lineCap="round"; ctx.lineJoin="round";
-    // bordo scuro
     ctx.strokeStyle="#4c648f"; ctx.lineWidth=46; ctx.beginPath(); ctx.moveTo(path.pts[0].x,path.pts[0].y); for(let i=1;i<path.pts.length;i++)ctx.lineTo(path.pts[i].x,path.pts[i].y); ctx.stroke();
-    // asfalto
     ctx.strokeStyle="#5b74a6"; ctx.lineWidth=40; ctx.beginPath(); ctx.moveTo(path.pts[0].x,path.pts[0].y); for(let i=1;i<path.pts.length;i++)ctx.lineTo(path.pts[i].x,path.pts[i].y); ctx.stroke();
-    // cordoli (segmenti brevi rosso/bianco)
     const step = 26;
     for(let d=0; d<path.total; d+=step){
       const p=posOnPath(path,d); const w=22;
       ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.ang);
       ctx.fillStyle = (Math.floor(d/step)%2)? "#e6e9f2":"#e10600";
-      ctx.fillRect(-w/2,-22, w, 8); // sinistra
-      ctx.fillRect(-w/2, 14, w, 8); // destra
+      ctx.fillRect(-w/2,-22, w, 8); ctx.fillRect(-w/2, 14, w, 8);
       ctx.restore();
     }
-    // tratteggio centrale
     ctx.strokeStyle="#cfd8ef"; ctx.lineWidth=3; ctx.setLineDash([14,14]); ctx.beginPath(); ctx.moveTo(path.pts[0].x,path.pts[0].y); for(let i=1;i<path.pts.length;i++)ctx.lineTo(path.pts[i].x,path.pts[i].y); ctx.stroke(); ctx.setLineDash([]);
   }
 
   /* ===== Auto ===== */
   const TEAMS=["Aquila GP","Vortex","Nebula","Artemis","Orion","Tempest","Falconet","Helios","Quartz","Zenith","Argon","Volta"];
   const COLORS=["#e10600","#00d2be","#0600ef","#ff9800","#2b2d42","#00c853","#8e24aa","#ffd600","#ff1744","#40c4ff","#64ffda","#b388ff"];
-
   function drawF1(x,y,ang,color,num){
     ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
-    const L=58, Wc=18; // più lunga e stretta
-    // ombra
+    const L=58, Wc=18;
     ctx.globalAlpha=.28; ctx.fillStyle="#000"; ctx.beginPath(); ctx.ellipse(2,6,L*.60,Wc*1.25,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
-    // sidepod/vasca scura
     ctx.fillStyle="#121622"; ctx.fillRect(-L/2+8, -Wc*0.55, L-16, Wc*1.10);
-    // bodywork colorato
     ctx.fillStyle=color; ctx.beginPath();
     ctx.moveTo(-L/2+12,-Wc*0.95); ctx.quadraticCurveTo(-4,-Wc*1.05, L/2-10,-Wc*0.55);
     ctx.lineTo(L/2-10, Wc*0.55); ctx.quadraticCurveTo(-4, Wc*1.05, -L/2+12, Wc*0.95);
     ctx.closePath(); ctx.fill();
-    // cockpit + halo
     ctx.fillStyle="#0f141c"; ctx.fillRect(-2,-Wc*0.55,4,Wc*1.10);
     ctx.fillStyle="#0b0f17"; ctx.fillRect(-1.4,-Wc*0.82,2.8,Wc*1.64);
-    // ale anteriore/posteriore
     ctx.fillStyle="#e6e9f2"; ctx.fillRect(-L/2-16,-Wc*1.0,14,Wc*2.0);
     ctx.fillStyle="#d3dbec"; ctx.fillRect(L/2-6,-Wc*0.9,12,Wc*1.8);
-    // endplate
     ctx.fillStyle="#c5cedf"; ctx.fillRect(L/2-2,-Wc*0.8,6,Wc*1.6);
-    // ruote
     ctx.fillStyle="#0b0b0e"; [[-L/4,-Wc/1.05],[-L/4,Wc/1.05],[L/4,-Wc/1.05],[L/4,Wc/1.05]].forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],6.2,0,Math.PI*2);ctx.fill()});
-    // numeri
     ctx.fillStyle="#fff"; ctx.fillRect(-L/2+4,-8,18,16);
     ctx.fillStyle="#111"; ctx.font="bold 11px monospace"; const s=String(num); ctx.fillText(s,-L/2+(s.length===1?10:7),3);
     ctx.fillStyle="#fff"; ctx.fillRect(-7,-7,14,14); ctx.fillStyle="#111"; ctx.fillText(s,-5,3);
@@ -375,7 +372,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     for(let i=0;i<N;i++){
       const team=order[i%order.length], color=COLORS[i%COLORS.length];
       const base=(100+Math.random()*28)*f.spd*(0.96+Math.random()*f.var);
-      cars.push({id:i,team,color,number:2+i,dist:i*70,baseSpeed:base,speed:base,lap:1,finished:false,totalTime:0,penalties:[],dsq:false,mode:"race",pitTimer:0,nextPitLap:0});
+      cars.push({id:i,team,color,number:2+i,dist=i*70,baseSpeed:base,speed:base,lap:1,finished:false,totalTime:0,penalties:[],dsq:false,mode:"race",pitTimer:0,nextPitLap:0});
     }
     const sel=$('carSelect'); sel.innerHTML=""; cars.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=`#${c.number} ${c.team}`;sel.appendChild(o)});
   }
@@ -432,7 +429,8 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
   }
 
   /* ===== Infrazioni (solo avviso) ===== */
-  let nextInfraction=0;
+  let nextInfraction=0, infraction=null, nextInfractionTimer=0;
+  function scheduleInfraction(){ nextInfractionTimer = performance.now() + (12000 + Math.random()*13000); }
   function maybeInfraction(){
     if(infraction || performance.now()<nextInfractionTimer) return;
     const kinds=["Sorpasso in bandiera gialla","Taglio di curva","Collisione evitabile","Ostacolo volontario"];
@@ -516,7 +514,7 @@ canvas{display:block;border-radius:12px;background:transparent;width:100%;height
     const safeStart=()=>{ startRace(); menu.style.display='none'; resizeCanvas(); drawOnce(); scrollToTrack(); };
     playNow.addEventListener('click', safeStart, {passive:true});
     start.addEventListener('click', safeStart, {passive:true});
-    tuto.addEventListener('click', ()=>alert("Scegli giri/pista/difficoltà e premi Gioca.\nBandiere: Verde/Gialla/SC/Rossa.\nPenalità dal pannello a destra.\nIncidenti ogni 5–20s con messaggio 'incidente risolto'.\nMobile: circuito più grande, tribune animate."));
+    tuto.addEventListener('click', ()=>alert("Scegli giri/pista/difficoltà e premi Gioca.\nBandiere: Verde/Gialla/SC/Rossa.\nPenalità dal pannello.\nIncidenti ogni 5–20s con messaggio 'incidente risolto'.\nMobile: bandiere & penalità sopra la classifica."));
   })();
 
   /* ===== Preview iniziale ===== */
